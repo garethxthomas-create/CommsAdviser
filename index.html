@@ -43,24 +43,26 @@
   }
   button.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600}
   button.quiet{border:none; background:transparent; color:var(--ink-soft)}
+  button.small{font-size:12.5px; padding:4px 9px}
   button:disabled{opacity:.45; cursor:default}
 
   main{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch}
   .wrap{max-width:760px; margin:0 auto; padding:20px 16px 8px}
 
   /* Bank */
+  .bank-actions{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap}
   .bank-toolbar{display:flex; gap:8px; margin-bottom:14px}
   .bank-toolbar input{
     flex:1; font:inherit; padding:9px 12px; border-radius:10px;
     border:1px solid var(--line); background:var(--panel); color:var(--ink);
   }
-  .bank-actions{display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap}
   .tagrow{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px}
   .chip{
     font-size:12.5px; padding:4px 10px; border-radius:999px; background:var(--chip);
-    border:1px solid var(--line); cursor:pointer; color:var(--ink-soft);
+    border:1px solid var(--line); cursor:pointer; color:var(--ink-soft); user-select:none;
   }
   .chip.on{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+  .chip .x{margin-left:6px; font-weight:700}
   .story{
     width:100%; text-align:left; display:block; padding:14px 16px; margin-bottom:10px;
     border:1px solid var(--line); border-radius:var(--radius); background:var(--panel);
@@ -68,16 +70,14 @@
   .story:hover{border-color:var(--accent)}
   .story .t{font-weight:650; margin-bottom:3px}
   .story .m{font-size:12.5px; color:var(--ink-soft)}
-  .empty{
-    text-align:center; color:var(--ink-soft); padding:40px 10px; font-size:15px;
-  }
+  .empty{text-align:center; color:var(--ink-soft); padding:40px 10px; font-size:15px}
   .empty .big{font-size:17px; color:var(--ink); font-weight:600; margin-bottom:8px}
 
   /* Setup */
   .setup h2{font-size:21px; margin:10px 0 6px}
   .setup p.lead{color:var(--ink-soft); margin:0 0 20px}
   .modes{display:grid; gap:14px; grid-template-columns:1fr}
-  @media(min-width:600px){.modes{grid-template-columns:1fr 1fr}}
+  @media(min-width:640px){.modes{grid-template-columns:1fr 1fr 1fr}}
   .mode-card{
     text-align:left; padding:18px; border-radius:var(--radius);
     border:1px solid var(--line); background:var(--panel);
@@ -145,6 +145,12 @@
   }
   #artifactText{white-space:pre-wrap; font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
   #storyBody h1,#storyBody h2,#storyBody h3{line-height:1.3}
+  .tagedit{display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:10px 0}
+  .tagadd{display:flex; gap:6px; margin-top:8px}
+  .tagadd input{flex:1; font:inherit; padding:7px 10px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--ink)}
+  .tagmgr-row{display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--line)}
+  .tagmgr-row .n{flex:1}
+  .tagmgr-row .c{font-size:12px; color:var(--ink-soft)}
   .toast{
     position:fixed; left:50%; transform:translateX(-50%); bottom:90px; z-index:30;
     background:var(--danger); color:#fff; padding:10px 16px; border-radius:10px;
@@ -170,8 +176,10 @@
     <!-- BANK (home) -->
     <div id="bankView">
       <div class="bank-actions">
-        <button class="primary" id="btnNewCapture">+ Capture a story</button>
-        <button id="btnNewChallenge">Challenge a piece of work</button>
+        <button class="primary" id="btnNewCapture">+ Capture</button>
+        <button id="btnNewChallenge">Challenge</button>
+        <button id="btnNewPrep">Prep</button>
+        <button class="quiet" id="btnTags">Tags</button>
         <button class="quiet" id="btnRefresh">Refresh</button>
       </div>
       <div class="bank-toolbar">
@@ -187,13 +195,17 @@
       <h2>What kind of session?</h2>
       <p class="lead">A constructively difficult colleague. One question at a time. It ends with something written.</p>
       <div class="modes">
-        <button class="mode-card" data-mode="challenge">
-          <div class="t">Challenge</div>
-          <div class="d">Pressure-test live work: a brief, a plan, a draft strategy, an interview answer. Ends with strengths, gaps, and unresolved decisions.</div>
-        </button>
         <button class="mode-card" data-mode="capture">
           <div class="t">Capture</div>
-          <div class="d">An interview about past work that ends with a full-texture story file saved to the bank.</div>
+          <div class="d">The Adviser proposes what to capture next from your backlog and coverage gaps, then interviews you. Ends with a story file saved to the bank.</div>
+        </button>
+        <button class="mode-card" data-mode="challenge">
+          <div class="t">Challenge</div>
+          <div class="d">Pressure-test live work: a brief, a plan, a draft, an answer. Ends with strengths, gaps, and unresolved decisions.</div>
+        </button>
+        <button class="mode-card" data-mode="prep">
+          <div class="t">Prep</div>
+          <div class="d">Paste a job description or describe the room. The Adviser maps your stories to it, fills the critical gaps, and writes the prep pack.</div>
         </button>
       </div>
     </div>
@@ -219,7 +231,7 @@
       <div class="field">
         <label for="apiKey">Anthropic API key</label>
         <input id="apiKey" type="password" placeholder="sk-ant-..." autocomplete="off">
-        <div class="hint">From console.anthropic.com. Stored only in this browser. Set a monthly spend limit there; sessions cost cents.</div>
+        <div class="hint">From console.anthropic.com. Stored only in this browser.</div>
       </div>
       <div class="field">
         <label for="modelId">Model</label>
@@ -230,12 +242,10 @@
       <div class="field">
         <label for="gClientId">Google OAuth Client ID</label>
         <input id="gClientId" type="text" placeholder="1234567890-xxxx.apps.googleusercontent.com">
-        <div class="hint">From your Google Cloud project (see SETUP.md). Needed once per app, not per device.</div>
       </div>
       <div class="field">
         <label for="folderId">Evidence Bank folder ID</label>
         <input id="folderId" type="text">
-        <div class="hint">The Drive folder that holds your story files. Default is your Career Evidence Bank.</div>
       </div>
       <div class="field">
         <button id="btnConnectDrive">Connect Google Drive</button>
@@ -272,10 +282,32 @@
 <div class="overlay" id="storyOverlay">
   <div class="modal">
     <div class="m-head"><h3 id="storyTitle">Story</h3><button class="quiet" data-close>&#10005;</button></div>
-    <div class="m-body"><div id="storyBody"></div></div>
+    <div class="m-body">
+      <div id="tagEditor"></div>
+      <div id="storyBody"></div>
+    </div>
     <div class="m-foot">
+      <button id="btnConvertStory" style="display:none">Convert to .md</button>
       <button id="btnCopyStory">Copy markdown</button>
       <button data-close class="primary">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAG MANAGER -->
+<div class="overlay" id="tagsOverlay">
+  <div class="modal">
+    <div class="m-head"><h3>Tags</h3><button class="quiet" data-close>&#10005;</button></div>
+    <div class="m-body">
+      <div class="tagadd">
+        <input id="newTagInput" type="text" placeholder="New tag&hellip;">
+        <button id="btnAddTag">Add</button>
+      </div>
+      <div class="hint" style="margin-bottom:10px">Rename changes the tag in every story that uses it. Retire removes it from the suggestion list only; stories keep it until you edit them.</div>
+      <div id="tagMgrList"></div>
+    </div>
+    <div class="m-foot">
+      <button data-close class="primary">Done</button>
     </div>
   </div>
 </div>
@@ -285,7 +317,7 @@
 <script>
 "use strict";
 
-/* ================= The Adviser's brain (v2, recalibrated) ================= */
+/* ================= The Adviser's brain (v3) ================= */
 
 var BASE_PROMPT = [
 "You are The Adviser: a senior communications colleague for Gareth Thomas, a senior internal and executive communications professional with more than 20 years of experience (executive comms, change, AI-led communications transformation). You are not a writer. Your job is to improve the quality of his thinking and leave behind a written artifact. Never explain communications basics to him. Operate at the level of one communications director talking to another.",
@@ -293,7 +325,7 @@ var BASE_PROMPT = [
 "Method rules:",
 "1. Ask exactly ONE question per reply. Each question follows from his last answer. Never a list of questions.",
 "2. Adapt; do not march through a script. If an answer opens something important, follow it.",
-"3. Every reply must ADD something beyond the question: an observation, a reframe, a connection to something he said earlier, or a piece of structure. A bare question is a wasted turn.",
+"3. Every reply must ADD something beyond the question: an observation, a reframe, a connection to something he said earlier or to a story already in his bank, or a piece of structure. A bare question is a wasted turn.",
 "4. Data beats assertion, in both directions. Ask what evidence supports a claim; attach every number he offers.",
 "5. Distinguish the honest version of a story from the impressive version. The honest texture is almost always stronger, and lines optimized for one audience can be dangerous in front of another.",
 "",
@@ -302,13 +334,29 @@ var BASE_PROMPT = [
 "7. Everywhere else, build. Name what is solid and extend it. Acknowledging strong material plainly is accuracy, not flattery.",
 "8. Never two consecutive replies that only push back. If the last reply challenged, this one must first contribute before it questions.",
 "9. Match intensity to stakes. Exploratory thinking gets curiosity; near-final decisions and high-risk framings get rigor.",
-"10. When he pushes back with new reasoning, weigh it honestly and concede when he is right. Conceding well is what makes the next challenge land. (Precedent: his 'no disagreements in 20 years' position survived pressure AND concealed a monthly data-backed disagreement with a CEO. Both things were true; the resolution came from widening the definition, not from winning the argument.)",
+"10. When he pushes back with new reasoning, weigh it honestly and concede when he is right. Conceding well is what makes the next challenge land.",
 "11. Do not accept 'that does not count' or 'that never happens' at face value; the best material hides behind those phrases. Widen the definition and probe again, warmly.",
 "",
 "Tone: direct, professional, warm, no flattery, no em dashes, US spelling. Conclusion first. Keep replies under 150 words until the closing artifact. The judgment always returns to him."
 ].join("\n");
 
 var MODES = {
+  capture: {
+    label: "Capture",
+    dynamicOpen: true,
+    bootstrap: "Begin the capture session. Look at my story backlog and my current tag coverage, and open by proposing what we should capture today: name your top recommendation and why, offer one or two alternatives in a single sentence, and let me choose or name something else entirely.",
+    prompt: [
+"MODE: CAPTURE (backward-looking). You are interviewing Gareth about past work to produce a full-texture story file for his Career Evidence Bank.",
+"",
+"OPENING INTELLIGENCE: The session begins with you proposing what to capture, using the STORY BACKLOG and TAG COVERAGE provided below. Recommend the highest-value uncaptured story (priority order in the backlog, weighted toward anything needed for live interview processes), briefly say why now, and offer alternatives in one sentence. If he picks something not on the backlog, good: capture it and note it as new.",
+"",
+"Once a story is chosen, ask him to tell it rough, the way he would tell a trusted colleague over coffee, mess and all. Then dig for what the polished version omits: the PEOPLE (who was afraid, who resisted, who decided, what happened to them; a story told entirely in systems and outcomes is missing its cast), the DECISIONS (the actual call, the options, who disagreed, why it landed where it did), the NUMBERS (reach, engagement, drop-off, budget, scale), the UNCOMFORTABLE BIT (what nearly went wrong, what he would do differently; if the story has no uncomfortable bit it has not been told yet), and the DANGER ZONES (how this story could be told badly to a hiring manager, a peer panel, or HR, and the safe telling for each).",
+"",
+"Capture is archaeology, not cross-examination. Dig persistently, but let him tell it.",
+"",
+"When asked to produce the final artifact, write a complete markdown story file with this schema: # Title; Status line (date captured, refinement pending); Organization, role, period; Competency tags (comma-separated; prefer tags from the taxonomy below, but coin a new one when the material genuinely needs it); One-line version; The full story (sections as the story demands); Evidence and numbers; Danger zones when telling this story; Interview cuts (a 30-second spoken cut and a 90-second spoken cut, plus targeted cuts for likely question types); Open items for next capture session."
+    ].join("\n")
+  },
   challenge: {
     label: "Challenge",
     intro: "Challenge mode. Tell me the situation, rough. What are you trying to do, and what do you have so far?",
@@ -317,30 +365,36 @@ var MODES = {
 "",
 "If the bank index below contains relevant prior stories or answers, connect them: remind him what he already knows.",
 "",
-"When asked to produce the final artifact, write a markdown review titled with the topic, with sections: Strengths (what is solid and why), Gaps (what is missing or thin, stated bluntly), Unresolved decisions (choices that must be made, and by whom, before this ships), and where relevant Danger zones (specific phrasings or framings that would hurt in the intended room, each with a safe translation)."
+"When asked to produce the final artifact, write a markdown review starting with a single # title line, then: Strengths (what is solid and why), Gaps (what is missing or thin, stated bluntly), Unresolved decisions (choices that must be made, and by whom, before this ships), and where relevant Danger zones (specific phrasings or framings that would hurt in the intended room, each with a safe translation)."
     ].join("\n")
   },
-  capture: {
-    label: "Capture",
-    intro: "Capture mode. Pick the story, then tell it to me rough, the way you would tell a trusted colleague over coffee. Mess and all. What happened?",
+  prep: {
+    label: "Prep",
+    intro: "Prep mode. Paste the job description, or describe the room: who you are facing, what round it is, and what is at stake.",
     prompt: [
-"MODE: CAPTURE (backward-looking). You are interviewing Gareth about past work to produce a full-texture story file for his Career Evidence Bank. Open rough, then dig for what the polished version omits: the PEOPLE (who was afraid, who resisted, who decided, what happened to them; a story told entirely in systems and outcomes is missing its cast), the DECISIONS (the actual call, the options, who disagreed, why it landed where it did), the NUMBERS (reach, engagement, drop-off, budget, scale), the UNCOMFORTABLE BIT (what nearly went wrong, what he would do differently; if the story has no uncomfortable bit it has not been told yet), and the DANGER ZONES (how this story could be told badly to a hiring manager, a peer panel, or HR, and the safe telling for each).",
+"MODE: PREP. Gareth is preparing for a specific room: an interview round, a panel, a high-stakes meeting, or a negotiation. His FULL STORY FILES are provided below; you know his material better than he remembers it.",
 "",
-"Balance rules 6 to 9 apply here with extra warmth: capture is archaeology, not cross-examination. Dig persistently, but let him tell it.",
+"Process: First, read what he pastes (job description, panel names and roles, round details). Second, give a short read of the room: what this round is really testing, and each known participant's likely unspoken question. Third, map his existing stories and answers to the likely questions, naming files explicitly. Fourth, identify the two or three critical gaps, material this room needs that the bank does not hold or that is unexercised, and interview him briefly to fill them, one question at a time. Fifth, when asked for the artifact, write the complete prep pack.",
 "",
-"When asked to produce the final artifact, write a complete markdown story file with this schema: # Title; Status line (date captured, refinement pending); Organization, role, period; Competency tags (comms-specific, comma-separated, for retrieval); One-line version; The full story (sections as the story demands); Evidence and numbers; Danger zones when telling this story; Interview cuts (a 30-second spoken cut and a 90-second spoken cut, plus targeted cuts for likely question types); Open items for next capture session."
+"When asked to produce the final artifact, write a markdown prep pack starting with a single # title line, modeled on the structure that has worked before: What this round actually is; The room, decoded (per person: role, likely unspoken question, how to win them, based only on information he has provided); Your stories, cut for this audience (with the spoken framing and which bank file each comes from); Likely questions with answer shapes; Danger zones (never-say lines with safe translations); Questions to ask them; Logistics and final reminders."
     ].join("\n")
   }
 };
 
 var DEFAULT_FOLDER = "1vZhiPTU7jRjg7CN8T0UA2AmTn5kL1uRB";
+var TAXONOMY_NAME = "_Taxonomy.md";
+var BACKLOG_NAME = "_Story backlog.md";
 
 /* ================= State ================= */
 
 var state = { view: "bank", mode: null, messages: [] };
 var busy = false;
-var stories = [];            // {id, name, mimeType, modifiedTime, content, tags[]}
+var stories = [];       // visible story files
+var configFiles = {};   // name -> {id, name, mimeType, content}
+var taxonomy = [];      // canonical tags
 var activeTags = {};
+var currentStory = null;
+var editTags = null;    // working tag list in story viewer
 var gToken = null, gTokenExp = 0, tokenClient = null;
 
 function store(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
@@ -396,6 +450,44 @@ function toast(msg, ok){
   t._h = setTimeout(function(){ t.style.display = "none"; }, 4500);
 }
 
+/* ================= Tags ================= */
+
+function parseTags(content){
+  var m = content.match(/Competency tags[:\*\s]*([^\n]+)/i);
+  if(!m) return [];
+  return m[1].replace(/\*\*/g,"").split(",").map(function(s){ return s.trim(); }).filter(function(s){ return s && s.length < 40; });
+}
+function setTagsInContent(content, tags){
+  var line = tags.join(", ");
+  if(/Competency tags/i.test(content)){
+    return content.replace(/(Competency tags[:\*]*\s*)([^\n]+)/i, function(_, pre){ return pre + line; });
+  }
+  var lines = content.split("\n");
+  lines.splice(1, 0, "", "**Competency tags:** " + line);
+  return lines.join("\n");
+}
+function parseTaxonomy(content){
+  return content.split("\n").map(function(ln){
+    var m = ln.match(/^\s*-\s+(.+)$/);
+    return m ? m[1].trim() : null;
+  }).filter(Boolean);
+}
+function taxonomyContent(tags){
+  return "# Tag taxonomy\n\nCanonical competency tags for the Career Evidence Bank. The Adviser app reads this list for tag suggestions and coverage analysis. Edit freely: one tag per line, dash prefix.\n\n" +
+    tags.map(function(t){ return "- " + t; }).join("\n") + "\n";
+}
+function unionTags(){
+  var seen = {}, out = [];
+  taxonomy.forEach(function(t){ if(!seen[t]){ seen[t]=1; out.push(t); } });
+  stories.forEach(function(s){ (s.tags||[]).forEach(function(t){ if(!seen[t]){ seen[t]=1; out.push(t); } }); });
+  return out;
+}
+function tagCount(tag){
+  var n = 0;
+  stories.forEach(function(s){ if((s.tags||[]).indexOf(tag) !== -1) n++; });
+  return n;
+}
+
 /* ================= Views ================= */
 
 function show(view){
@@ -414,6 +506,7 @@ function show(view){
 function renderChat(){
   el("chatView").innerHTML = "";
   for(var i=0;i<state.messages.length;i++){
+    if(state.messages[i].hidden) continue;
     addBubble(state.messages[i].role, state.messages[i].content);
   }
 }
@@ -433,20 +526,22 @@ function scrollDown(){ var mn = el("main"); mn.scrollTop = mn.scrollHeight; }
 function startMode(mode){
   if(!read("adviser_key")){ openSettings(); toast("Add your Anthropic API key first."); return; }
   state.mode = mode;
-  state.messages = [{ role: "assistant", content: MODES[mode].intro }];
-  saveSession();
-  renderChat();
-  show("chat");
+  if(MODES[mode].dynamicOpen){
+    state.messages = [{ role: "user", content: MODES[mode].bootstrap, hidden: true }];
+    saveSession();
+    renderChat();
+    show("chat");
+    respond(1024);
+  } else {
+    state.messages = [{ role: "assistant", content: MODES[mode].intro }];
+    saveSession();
+    renderChat();
+    show("chat");
+  }
   el("input").focus();
 }
 
 /* ================= Bank rendering ================= */
-
-function parseTags(content){
-  var m = content.match(/Competency tags[:\*\s]*([^\n]+)/i);
-  if(!m) return [];
-  return m[1].replace(/\*\*/g,"").split(",").map(function(s){ return s.trim(); }).filter(function(s){ return s && s.length < 40; });
-}
 
 function renderBank(){
   var q = (el("search").value || "").toLowerCase();
@@ -454,12 +549,10 @@ function renderBank(){
   var list = el("storyList");
   list.innerHTML = "";
 
-  // tag row
-  var allTags = {};
-  stories.forEach(function(s){ (s.tags||[]).forEach(function(t){ allTags[t] = true; }); });
   var tr = el("tagRow");
   tr.innerHTML = "";
-  Object.keys(allTags).sort().forEach(function(t){
+  unionTags().forEach(function(t){
+    if(tagCount(t) === 0 && !activeTags[t]) return;
     var c = document.createElement("span");
     c.className = "chip" + (activeTags[t] ? " on" : "");
     c.textContent = t;
@@ -469,7 +562,7 @@ function renderBank(){
 
   var shown = 0;
   stories.forEach(function(s){
-    var hay = (s.name + " " + (s.content||"") ).toLowerCase();
+    var hay = (s.name + " " + (s.content||"")).toLowerCase();
     if(q && hay.indexOf(q) === -1) return;
     for(var i=0;i<tagsOn.length;i++){ if((s.tags||[]).indexOf(tagsOn[i]) === -1) return; }
     shown++;
@@ -477,7 +570,8 @@ function renderBank(){
     b.className = "story";
     var d = s.modifiedTime ? new Date(s.modifiedTime).toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}) : "";
     b.innerHTML = "<div class='t'>" + esc(s.name.replace(/\.md$/,"")) + "</div>" +
-                  "<div class='m'>" + esc(d) + (s.tags && s.tags.length ? " &middot; " + esc(s.tags.slice(0,4).join(", ")) : "") + "</div>";
+                  "<div class='m'>" + esc(d) + (s.tags && s.tags.length ? " &middot; " + esc(s.tags.slice(0,4).join(", ")) : "") +
+                  (s.mimeType === "application/vnd.google-apps.document" ? " &middot; Google Doc" : "") + "</div>";
     b.addEventListener("click", function(){ openStory(s); });
     list.appendChild(b);
   });
@@ -487,7 +581,7 @@ function renderBank(){
     empty.style.display = "";
     empty.innerHTML = read("adviser_gclient")
       ? "<div class='big'>Connect Google Drive</div>Your evidence bank lives in Drive. <br><br><button class='primary' id='btnConnectInline'>Connect Drive</button>"
-      : "<div class='big'>One-time setup needed</div>Add your Google Client ID in settings (gear icon), then connect Drive. SETUP.md has the ten-minute walkthrough.";
+      : "<div class='big'>One-time setup needed</div>Add your Google Client ID in settings (gear icon), then connect Drive. SETUP.md has the walkthrough.";
     var ib = el("btnConnectInline");
     if(ib) ib.addEventListener("click", connectDrive);
   } else if(!shown){
@@ -498,13 +592,163 @@ function renderBank(){
   }
 }
 
+/* ================= Story viewer + tag editing ================= */
+
 function openStory(s){
+  currentStory = s;
+  editTags = (s.tags || []).slice();
   el("storyTitle").textContent = s.name.replace(/\.md$/,"");
   el("storyBody").innerHTML = md(s.content || "(no content loaded; refresh the bank)");
+  var isDoc = s.mimeType === "application/vnd.google-apps.document";
+  el("btnConvertStory").style.display = isDoc ? "" : "none";
+  renderTagEditor(isDoc);
   el("storyOverlay").classList.add("open");
   el("btnCopyStory").onclick = function(){
     if(navigator.clipboard) navigator.clipboard.writeText(s.content || "").then(function(){ toast("Copied.", true); });
   };
+  el("btnConvertStory").onclick = function(){ convertToMd(s); };
+}
+
+function renderTagEditor(isDoc){
+  var host = el("tagEditor");
+  host.innerHTML = "";
+  var row = document.createElement("div");
+  row.className = "tagedit";
+  editTags.forEach(function(t, idx){
+    var c = document.createElement("span");
+    c.className = "chip on";
+    c.innerHTML = esc(t) + "<span class='x'>&times;</span>";
+    c.addEventListener("click", function(){ editTags.splice(idx,1); renderTagEditor(isDoc); });
+    row.appendChild(c);
+  });
+  host.appendChild(row);
+
+  if(isDoc){
+    var note = document.createElement("div");
+    note.className = "hint";
+    note.textContent = "This entry is a Google Doc, which the app can read but not edit. Convert it to .md (button below) to edit tags here.";
+    host.appendChild(note);
+    return;
+  }
+
+  var add = document.createElement("div");
+  add.className = "tagadd";
+  var inp = document.createElement("input");
+  inp.setAttribute("list", "tagSuggestions");
+  inp.placeholder = "Add a tag…";
+  var dl = document.createElement("datalist");
+  dl.id = "tagSuggestions";
+  unionTags().forEach(function(t){
+    if(editTags.indexOf(t) !== -1) return;
+    var o = document.createElement("option");
+    o.value = t;
+    dl.appendChild(o);
+  });
+  var btnA = document.createElement("button");
+  btnA.textContent = "Add";
+  btnA.addEventListener("click", function(){
+    var v = inp.value.trim();
+    if(v && editTags.indexOf(v) === -1){ editTags.push(v); inp.value=""; renderTagEditor(isDoc); }
+  });
+  var btnS = document.createElement("button");
+  btnS.className = "primary";
+  btnS.textContent = "Save tags";
+  btnS.addEventListener("click", saveStoryTags);
+  add.appendChild(inp); add.appendChild(dl); add.appendChild(btnA); add.appendChild(btnS);
+  host.appendChild(add);
+}
+
+function saveStoryTags(){
+  if(!currentStory) return;
+  var newContent = setTagsInContent(currentStory.content, editTags);
+  updateFile(currentStory.id, newContent).then(function(){
+    currentStory.content = newContent;
+    currentStory.tags = editTags.slice();
+    toast("Tags saved.", true);
+    renderBank();
+    el("storyOverlay").classList.remove("open");
+  }).catch(function(e){ toast(e.message || "Could not save tags."); });
+}
+
+function convertToMd(s){
+  var name = s.name.replace(/\.md$/,"") + ".md";
+  el("btnConvertStory").disabled = true;
+  saveToBank(name, s.content).then(function(){
+    return trashFile(s.id);
+  }).then(function(){
+    toast("Converted to .md.", true);
+    el("storyOverlay").classList.remove("open");
+    refreshBank();
+  }).catch(function(e){
+    toast(e.message || "Conversion failed.");
+  }).finally(function(){ el("btnConvertStory").disabled = false; });
+}
+
+/* ================= Tag manager ================= */
+
+function openTagManager(){
+  renderTagManager();
+  el("tagsOverlay").classList.add("open");
+}
+function renderTagManager(){
+  var host = el("tagMgrList");
+  host.innerHTML = "";
+  unionTags().forEach(function(t){
+    var row = document.createElement("div");
+    row.className = "tagmgr-row";
+    var n = document.createElement("span"); n.className = "n"; n.textContent = t;
+    var c = document.createElement("span"); c.className = "c"; c.textContent = tagCount(t) + " in use";
+    var bR = document.createElement("button"); bR.className = "small"; bR.textContent = "Rename";
+    bR.addEventListener("click", function(){ renameTag(t); });
+    var bD = document.createElement("button"); bD.className = "small"; bD.textContent = "Retire";
+    bD.addEventListener("click", function(){ retireTag(t); });
+    row.appendChild(n); row.appendChild(c); row.appendChild(bR); row.appendChild(bD);
+    host.appendChild(row);
+  });
+}
+function persistTaxonomy(){
+  var content = taxonomyContent(taxonomy);
+  var f = configFiles[TAXONOMY_NAME];
+  var p = f && f.mimeType !== "application/vnd.google-apps.document"
+    ? updateFile(f.id, content)
+    : saveToBank(TAXONOMY_NAME, content);
+  return p.then(function(){ if(f) f.content = content; });
+}
+function addTag(){
+  var v = el("newTagInput").value.trim();
+  if(!v) return;
+  if(taxonomy.indexOf(v) !== -1){ toast("Already exists."); return; }
+  taxonomy.push(v);
+  taxonomy.sort();
+  el("newTagInput").value = "";
+  persistTaxonomy().then(function(){ toast("Added.", true); renderTagManager(); renderBank(); })
+    .catch(function(e){ toast(e.message || "Could not save taxonomy."); });
+}
+function renameTag(oldTag){
+  var newTag = prompt("Rename '" + oldTag + "' to:", oldTag);
+  if(!newTag || newTag.trim() === "" || newTag.trim() === oldTag) return;
+  newTag = newTag.trim();
+  var ti = taxonomy.indexOf(oldTag);
+  if(ti !== -1) taxonomy[ti] = newTag; else taxonomy.push(newTag);
+  var affected = stories.filter(function(s){ return (s.tags||[]).indexOf(oldTag) !== -1; });
+  var docsSkipped = 0;
+  var updates = affected.map(function(s){
+    if(s.mimeType === "application/vnd.google-apps.document"){ docsSkipped++; return Promise.resolve(); }
+    var newTags = s.tags.map(function(t){ return t === oldTag ? newTag : t; });
+    var newContent = setTagsInContent(s.content, newTags);
+    return updateFile(s.id, newContent).then(function(){ s.content = newContent; s.tags = newTags; });
+  });
+  Promise.all(updates).then(persistTaxonomy).then(function(){
+    toast("Renamed in " + (affected.length - docsSkipped) + " file(s)." + (docsSkipped ? " " + docsSkipped + " Google Doc(s) skipped; convert them to .md first." : ""), true);
+    renderTagManager(); renderBank();
+  }).catch(function(e){ toast(e.message || "Rename failed part way; hit Refresh."); });
+}
+function retireTag(tag){
+  var i = taxonomy.indexOf(tag);
+  if(i === -1){ toast("That tag only exists inside story files; edit those stories to remove it."); return; }
+  taxonomy.splice(i,1);
+  persistTaxonomy().then(function(){ toast("Retired from suggestions.", true); renderTagManager(); renderBank(); })
+    .catch(function(e){ toast(e.message || "Could not save taxonomy."); });
 }
 
 /* ================= Google Drive ================= */
@@ -544,7 +788,7 @@ function driveFetch(url, opts){
   opts.headers["Authorization"] = "Bearer " + gToken;
   return fetch(url, opts).then(function(r){
     if(r.status === 401){ gToken = null; renderBank(); throw new Error("Drive session expired; hit Refresh to reconnect."); }
-    if(!r.ok) return r.text().then(function(b){ throw new Error("Drive error " + r.status); });
+    if(!r.ok) return r.text().then(function(){ throw new Error("Drive error " + r.status); });
     return r;
   });
 }
@@ -558,7 +802,7 @@ function refreshBank(){
   .then(function(r){ return r.json(); })
   .then(function(j){
     var files = (j.files || []).filter(function(f){
-      return f.mimeType === "application/vnd.google-apps.document" || /\.(md|txt)$/i.test(f.name) || f.mimeType.indexOf("text/") === 0;
+      return f.mimeType === "application/vnd.google-apps.document" || /\.(md|txt)$/i.test(f.name) || (f.mimeType && f.mimeType.indexOf("text/") === 0);
     });
     return Promise.all(files.map(function(f){
       var url = f.mimeType === "application/vnd.google-apps.document"
@@ -570,7 +814,13 @@ function refreshBank(){
     }));
   })
   .then(function(loaded){
-    stories = loaded;
+    configFiles = {};
+    stories = [];
+    loaded.forEach(function(f){
+      if(f.name.charAt(0) === "_"){ configFiles[f.name] = f; }
+      else stories.push(f);
+    });
+    taxonomy = configFiles[TAXONOMY_NAME] ? parseTaxonomy(configFiles[TAXONOMY_NAME].content) : [];
     store("adviser_bank_cache", JSON.stringify(stories.map(function(s){ return { name: s.name, tags: s.tags }; })));
     renderBank();
   })
@@ -579,7 +829,7 @@ function refreshBank(){
 }
 
 function saveToBank(name, content){
-  if(!driveReady()){ connectDrive(); toast("Connect Drive, then hit Save to bank again."); return Promise.reject(new Error("not connected")); }
+  if(!driveReady()){ connectDrive(); toast("Connect Drive, then try again."); return Promise.reject(new Error("not connected")); }
   var folder = read("adviser_folder") || DEFAULT_FOLDER;
   var boundary = "adviser_boundary_2718";
   var meta = { name: name, parents: [folder], mimeType: "text/markdown" };
@@ -598,6 +848,23 @@ function saveToBank(name, content){
   }).then(function(r){ return r.json(); });
 }
 
+function updateFile(id, content){
+  if(!driveReady()){ connectDrive(); return Promise.reject(new Error("Drive not connected; try again after connecting.")); }
+  return driveFetch("https://www.googleapis.com/upload/drive/v3/files/" + id + "?uploadType=media", {
+    method: "PATCH",
+    headers: { "Content-Type": "text/markdown; charset=UTF-8" },
+    body: content
+  }).then(function(r){ return r.json(); });
+}
+
+function trashFile(id){
+  return driveFetch("https://www.googleapis.com/drive/v3/files/" + id, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ trashed: true })
+  }).then(function(r){ return r.json(); });
+}
+
 /* ================= Anthropic ================= */
 
 function bankIndex(){
@@ -609,10 +876,49 @@ function bankIndex(){
   return stories.map(function(s){ return "- " + s.name.replace(/\.md$/,"") + (s.tags.length ? " (" + s.tags.join(", ") + ")" : ""); }).join("\n");
 }
 
+function coverageSummary(){
+  if(!taxonomy.length) return "";
+  return taxonomy.map(function(t){
+    var n = tagCount(t);
+    return "- " + t + ": " + (n ? n + " item(s)" : "NO COVERAGE");
+  }).join("\n");
+}
+
+function fullStoriesContext(){
+  var cap = 80000, used = 0, parts = [];
+  for(var i=0;i<stories.length;i++){
+    var s = stories[i];
+    var block = "=== FILE: " + s.name + " ===\n" + (s.content || "") + "\n";
+    if(used + block.length > cap){ parts.push("(Further files omitted for length: " + stories.slice(i).map(function(x){ return x.name; }).join(", ") + ")"); break; }
+    parts.push(block); used += block.length;
+  }
+  return parts.join("\n");
+}
+
 function systemPrompt(){
-  var idx = bankIndex();
-  return BASE_PROMPT + "\n\n" + MODES[state.mode].prompt +
-    (idx ? "\n\nBANK INDEX (titles and tags of what already exists in his Career Evidence Bank):\n" + idx : "");
+  var sp = BASE_PROMPT + "\n\n" + MODES[state.mode].prompt;
+  if(state.mode === "capture"){
+    var backlog = configFiles[BACKLOG_NAME] ? configFiles[BACKLOG_NAME].content : "";
+    if(backlog) sp += "\n\nSTORY BACKLOG:\n" + backlog;
+    var cov = coverageSummary();
+    if(cov) sp += "\n\nTAG COVERAGE (taxonomy tags vs items in the bank):\n" + cov;
+    if(taxonomy.length) sp += "\n\nTAXONOMY (preferred tags): " + taxonomy.join(", ");
+    var idx0 = bankIndex();
+    if(idx0) sp += "\n\nALREADY IN THE BANK:\n" + idx0;
+  } else if(state.mode === "prep"){
+    var full = fullStoriesContext();
+    if(full) sp += "\n\nFULL STORY FILES FROM HIS BANK:\n" + full;
+    var backlog2 = configFiles[BACKLOG_NAME] ? configFiles[BACKLOG_NAME].content : "";
+    if(backlog2) sp += "\n\nUNCAPTURED STORY BACKLOG (material he has but has not written up; flag if this room needs one of these):\n" + backlog2;
+  } else {
+    var idx = bankIndex();
+    if(idx) sp += "\n\nBANK INDEX (titles and tags of what already exists in his Career Evidence Bank):\n" + idx;
+  }
+  return sp;
+}
+
+function apiMessages(){
+  return state.messages.map(function(m){ return { role: m.role, content: m.content }; });
 }
 
 function callClaude(messages, maxTokens, onDelta){
@@ -663,21 +969,13 @@ function callClaude(messages, maxTokens, onDelta){
   });
 }
 
-function send(){
-  if(busy || state.view !== "chat") return;
-  var input = el("input");
-  var text = input.value.trim();
-  if(!text) return;
-  input.value = ""; autosize();
-  state.messages.push({ role: "user", content: text });
-  addBubble("user", text);
-  saveSession();
+function respond(maxTokens){
   busy = true;
   el("btnSend").disabled = true;
   el("thinking").style.display = "";
   scrollDown();
   var bubble = null;
-  callClaude(state.messages, 1024, function(sofar){
+  callClaude(apiMessages(), maxTokens, function(sofar){
     el("thinking").style.display = "none";
     if(!bubble) bubble = addBubble("assistant", sofar);
     else { bubble.innerHTML = md(sofar); scrollDown(); }
@@ -685,7 +983,7 @@ function send(){
     if(full){ state.messages.push({ role: "assistant", content: full }); saveSession(); }
   }).catch(function(err){
     toast(err.message || "Something went wrong.");
-    if(!bubble && state.messages.length && state.messages[state.messages.length-1].role === "user"){
+    if(!bubble && state.messages.length && state.messages[state.messages.length-1].role === "user" && !state.messages[state.messages.length-1].hidden){
       var last = state.messages.pop();
       el("input").value = last.content; autosize(); saveSession();
     }
@@ -696,18 +994,34 @@ function send(){
   });
 }
 
+function send(){
+  if(busy || state.view !== "chat") return;
+  var input = el("input");
+  var text = input.value.trim();
+  if(!text) return;
+  input.value = ""; autosize();
+  state.messages.push({ role: "user", content: text });
+  addBubble("user", text);
+  saveSession();
+  respond(1024);
+}
+
 function generateArtifact(){
   if(busy || !state.mode) return;
-  var ask = state.mode === "capture"
-    ? "Generate the final story file for this session now, following the capture schema exactly, starting with a single # title line. Output pure markdown only, no preamble and no commentary."
-    : "Generate the final written review for this session now: a single # title line, then Strengths, Gaps, Unresolved decisions, and Danger zones where relevant. Output pure markdown only, no preamble and no commentary.";
+  var asks = {
+    capture: "Generate the final story file for this session now, following the capture schema exactly, starting with a single # title line. Output pure markdown only, no preamble and no commentary.",
+    challenge: "Generate the final written review for this session now: a single # title line, then Strengths, Gaps, Unresolved decisions, and Danger zones where relevant. Output pure markdown only, no preamble and no commentary.",
+    prep: "Generate the complete prep pack for this session now, following the prep pack structure, starting with a single # title line. Output pure markdown only, no preamble and no commentary."
+  };
+  var prefixes = { capture: "Story - ", challenge: "Review - ", prep: "Prep - " };
+  var titles = { capture: "Story file", challenge: "Session review", prep: "Prep pack" };
   busy = true;
   el("btnArtifact").disabled = true;
   el("thinking").style.display = "";
-  var msgs = state.messages.concat([{ role: "user", content: ask }]);
+  var msgs = apiMessages().concat([{ role: "user", content: asks[state.mode] }]);
   var box = el("artifactText");
   box.textContent = "";
-  el("artifactTitle").textContent = state.mode === "capture" ? "Story file" : "Session review";
+  el("artifactTitle").textContent = titles[state.mode];
   el("artifactOverlay").classList.add("open");
   callClaude(msgs, 8192, function(sofar){
     el("thinking").style.display = "none";
@@ -715,9 +1029,8 @@ function generateArtifact(){
   }).then(function(full){
     box.textContent = full;
     var m = full.match(/^#\s+(.+)$/m);
-    var base = m ? m[1].trim() : (state.mode === "capture" ? "Captured story" : "Adviser review");
-    var prefix = state.mode === "capture" ? "Story - " : "Review - ";
-    el("artifactName").value = prefix + base.replace(/[\\/:*?"<>|]/g, "") + ".md";
+    var base = m ? m[1].trim() : "Adviser output";
+    el("artifactName").value = prefixes[state.mode] + base.replace(/[\\/:*?"<>|]/g, "") + ".md";
   }).catch(function(err){
     el("artifactOverlay").classList.remove("open");
     toast(err.message || "Could not generate the artifact.");
@@ -752,6 +1065,9 @@ document.addEventListener("DOMContentLoaded", function(){
 
   el("btnNewCapture").addEventListener("click", function(){ startMode("capture"); });
   el("btnNewChallenge").addEventListener("click", function(){ startMode("challenge"); });
+  el("btnNewPrep").addEventListener("click", function(){ startMode("prep"); });
+  el("btnTags").addEventListener("click", openTagManager);
+  el("btnAddTag").addEventListener("click", addTag);
   el("btnRefresh").addEventListener("click", refreshBank);
   el("search").addEventListener("input", renderBank);
 
