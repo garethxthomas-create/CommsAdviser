@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Adviser</title>
+<style>
+  :root{
+    --bg:#f6f5f1; --panel:#ffffff; --ink:#1d2733; --ink-soft:#5b6773;
+    --accent:#0f5d5a; --accent-ink:#ffffff; --line:#e3e0d8;
+    --user-bubble:#0f5d5a; --user-ink:#ffffff; --adv-bubble:#ffffff;
+    --danger:#a33c2f; --radius:14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#141a1f; --panel:#1d252c; --ink:#e8e6e1; --ink-soft:#9aa5ae;
+      --accent:#3fa39e; --accent-ink:#0e1518; --line:#2c363f;
+      --user-bubble:#0f5d5a; --user-ink:#f2f1ec; --adv-bubble:#1d252c;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    display:flex; flex-direction:column;
+  }
+  header{
+    display:flex; align-items:center; gap:10px; padding:12px 16px;
+    border-bottom:1px solid var(--line); background:var(--panel);
+    position:sticky; top:0; z-index:5;
+  }
+  header h1{font-size:17px; margin:0; font-weight:700; letter-spacing:.2px}
+  .badge{
+    font-size:12px; font-weight:600; padding:3px 10px; border-radius:999px;
+    background:var(--accent); color:var(--accent-ink); display:none;
+  }
+  header .spacer{flex:1}
+  button{
+    font:inherit; cursor:pointer; border:1px solid var(--line);
+    background:var(--panel); color:var(--ink); border-radius:10px; padding:7px 12px;
+  }
+  button.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600}
+  button.quiet{border:none; background:transparent; color:var(--ink-soft)}
+  button:disabled{opacity:.45; cursor:default}
+
+  main{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 8px}
+
+  /* Setup */
+  .setup h2{font-size:22px; margin:26px 0 6px}
+  .setup p.lead{color:var(--ink-soft); margin:0 0 22px}
+  .modes{display:grid; gap:14px; grid-template-columns:1fr}
+  @media(min-width:600px){.modes{grid-template-columns:1fr 1fr}}
+  .mode-card{
+    text-align:left; padding:18px; border-radius:var(--radius);
+    border:1px solid var(--line); background:var(--panel);
+  }
+  .mode-card:hover{border-color:var(--accent)}
+  .mode-card .t{font-weight:700; font-size:17px; margin-bottom:6px}
+  .mode-card .d{color:var(--ink-soft); font-size:14px}
+  .keynote{margin-top:26px; font-size:13px; color:var(--ink-soft)}
+  .keynote a{color:var(--accent)}
+
+  /* Chat */
+  .msg{display:flex; margin:14px 0}
+  .msg.user{justify-content:flex-end}
+  .bubble{
+    max-width:86%; padding:12px 15px; border-radius:var(--radius);
+    border:1px solid var(--line); background:var(--adv-bubble);
+    overflow-wrap:break-word;
+  }
+  .msg.user .bubble{background:var(--user-bubble); color:var(--user-ink); border-color:var(--user-bubble)}
+  .bubble p{margin:.5em 0}
+  .bubble p:first-child{margin-top:0}
+  .bubble p:last-child{margin-bottom:0}
+  .bubble h1,.bubble h2,.bubble h3{margin:.7em 0 .3em; line-height:1.25}
+  .bubble ul{margin:.4em 0; padding-left:1.3em}
+  .bubble blockquote{margin:.5em 0; padding:2px 12px; border-left:3px solid var(--accent); color:var(--ink-soft)}
+  .bubble code{background:rgba(127,127,127,.15); border-radius:4px; padding:1px 5px; font-size:.9em}
+  .thinking{color:var(--ink-soft); font-size:14px; padding:4px 2px}
+
+  /* Composer */
+  .composer{
+    border-top:1px solid var(--line); background:var(--panel);
+    padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+    position:sticky; bottom:0;
+  }
+  .composer .inner{max-width:760px; margin:0 auto; display:flex; gap:8px; align-items:flex-end}
+  textarea{
+    flex:1; resize:none; font:inherit; color:var(--ink);
+    background:var(--bg); border:1px solid var(--line); border-radius:12px;
+    padding:10px 12px; max-height:160px; min-height:44px;
+  }
+  textarea:focus{outline:2px solid var(--accent); border-color:transparent}
+
+  /* Modals */
+  .overlay{
+    position:fixed; inset:0; background:rgba(10,14,18,.55);
+    display:none; align-items:center; justify-content:center; z-index:20; padding:16px;
+  }
+  .overlay.open{display:flex}
+  .modal{
+    background:var(--panel); border-radius:16px; border:1px solid var(--line);
+    width:100%; max-width:640px; max-height:86vh; display:flex; flex-direction:column;
+  }
+  .modal .m-head{display:flex; align-items:center; padding:14px 18px; border-bottom:1px solid var(--line)}
+  .modal .m-head h3{margin:0; font-size:16px; flex:1}
+  .modal .m-body{padding:16px 18px; overflow-y:auto}
+  .modal .m-foot{padding:12px 18px; border-top:1px solid var(--line); display:flex; gap:8px; justify-content:flex-end}
+  .field{margin-bottom:14px}
+  .field label{display:block; font-size:13px; font-weight:600; margin-bottom:5px}
+  .field input{
+    width:100%; font:inherit; padding:9px 11px; border-radius:10px;
+    border:1px solid var(--line); background:var(--bg); color:var(--ink);
+  }
+  .hint{font-size:12.5px; color:var(--ink-soft); margin-top:5px}
+  #artifactText{
+    white-space:pre-wrap; font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:14px;
+  }
+  .toast{
+    position:fixed; left:50%; transform:translateX(-50%); bottom:90px; z-index:30;
+    background:var(--danger); color:#fff; padding:10px 16px; border-radius:10px;
+    font-size:14px; display:none; max-width:90%;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>The Adviser</h1>
+  <span class="badge" id="modeBadge"></span>
+  <div class="spacer"></div>
+  <button class="quiet" id="btnArtifact" title="End session and generate the written artifact" style="display:none">Finish &amp; write up</button>
+  <button class="quiet" id="btnNew" style="display:none">New</button>
+  <button class="quiet" id="btnSettings" aria-label="Settings">&#9881;</button>
+</header>
+
+<main id="main">
+  <div class="wrap">
+
+    <div id="setup" class="setup">
+      <h2>What kind of session?</h2>
+      <p class="lead">A constructively difficult colleague. One question at a time. It ends with something written.</p>
+      <div class="modes">
+        <button class="mode-card" data-mode="challenge">
+          <div class="t">Challenge</div>
+          <div class="d">Pressure-test live work: a brief, a plan, a draft strategy, an interview answer. Ends with strengths, gaps, and unresolved decisions.</div>
+        </button>
+        <button class="mode-card" data-mode="capture">
+          <div class="t">Capture</div>
+          <div class="d">Interview me about past work and produce a full-texture story file for the Career Evidence Bank.</div>
+        </button>
+      </div>
+      <p class="keynote" id="keyNote"></p>
+    </div>
+
+    <div id="chat" style="display:none"></div>
+    <div class="thinking" id="thinking" style="display:none">The Adviser is thinking&hellip;</div>
+  </div>
+</main>
+
+<div class="composer" id="composer" style="display:none">
+  <div class="inner">
+    <textarea id="input" rows="1" placeholder="Your answer&hellip;"></textarea>
+    <button class="primary" id="btnSend">Send</button>
+  </div>
+</div>
+
+<div class="overlay" id="settingsOverlay">
+  <div class="modal">
+    <div class="m-head"><h3>Settings</h3><button class="quiet" data-close>&#10005;</button></div>
+    <div class="m-body">
+      <div class="field">
+        <label for="apiKey">Anthropic API key</label>
+        <input id="apiKey" type="password" placeholder="sk-ant-..." autocomplete="off">
+        <div class="hint">Stored only in this browser. Create one at console.anthropic.com (set a monthly spend limit while you are there; this app costs cents per session).</div>
+      </div>
+      <div class="field">
+        <label for="modelId">Model</label>
+        <input id="modelId" type="text">
+        <div class="hint">Default: claude-sonnet-4-5. Change here if Anthropic renames or you want a different model.</div>
+      </div>
+    </div>
+    <div class="m-foot">
+      <button data-close>Cancel</button>
+      <button class="primary" id="btnSaveSettings">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="artifactOverlay">
+  <div class="modal">
+    <div class="m-head"><h3 id="artifactTitle">Session artifact</h3><button class="quiet" data-close>&#10005;</button></div>
+    <div class="m-body"><div id="artifactText"></div></div>
+    <div class="m-foot">
+      <button id="btnCopyArtifact">Copy</button>
+      <button class="primary" id="btnDownloadArtifact">Download .md</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ---------- The Adviser's brain ---------- */
+
+var BASE_PROMPT = [
+"You are The Adviser: a constructively difficult senior communications colleague for Gareth Thomas, a senior internal and executive communications professional with more than 20 years of experience (executive comms, change, AI-led communications transformation). You are not a writer. Your job is to improve the quality of his thinking and leave behind a written artifact. Never explain communications basics to him. Challenge at the level of one communications director talking to another.",
+"",
+"Temperament rules, non-negotiable:",
+"1. Ask exactly ONE question per reply. Never a list of questions. Each question follows from his last answer.",
+"2. Adapt; do not march through a script. If an answer opens something important, follow it.",
+"3. Hold the line. When you hit a contradiction, stop on it and insist it is resolved before moving on. Never flag-and-continue.",
+"4. Catch deflection. Process language, passive voice, and distancing (for example: 'the role disappeared', 'it was not my decision', 'as with any good process') are signals to dig. Name the deflection plainly and ask the human question underneath.",
+"5. Never accept 'that does not count' or 'that never happens'. The best material hides behind those phrases. Widen the definition and probe again. (Precedent: 'no disagreements in 20 years' concealed a monthly, data-backed disagreement with a CEO.)",
+"6. Data beats assertion. Ask what evidence supports a claim, and attach every number offered.",
+"7. Distinguish the honest version of a story from the impressive version. The honest texture is almost always stronger, and lines optimized for one audience can be dangerous in front of another.",
+"8. Keep replies under 150 words until the closing artifact: a brief observation, then the one question.",
+"9. Tone: direct, professional, warm, zero flattery, no em dashes, US spelling. Conclusion first. Push hard but constructively; the judgment always returns to him."
+].join("\n");
+
+var MODES = {
+  challenge: {
+    label: "Challenge",
+    intro: "Challenge mode. Tell me the situation, rough. What are you trying to do, and what do you have so far?",
+    prompt: [
+"MODE: CHALLENGE (forward-looking). Gareth brings live work: a brief, plan, draft strategy, stakeholder request, or interview answer. Interrogate it progressively. Draw on questions like these as the conversation demands, never as a checklist: Who is this actually for, and what do they currently think, feel, or do? What should change, and is communication actually the solution? What happens if you say nothing? Who disagrees, who loses, which leader pushes back? What will the audience infer that was never intended? What are people afraid of, and does anything here answer that fear honestly? What is the evidence this will work, and would the proposed measures actually detect success? Is this trying to achieve more than one objective?",
+"",
+"When asked to produce the final artifact, write a markdown review with these sections: Strengths (what is solid and why), Gaps (what is missing or thin, stated bluntly), Unresolved decisions (choices that must be made, and by whom, before this ships), and where relevant Danger zones (specific phrasings or framings that would hurt in the intended room, each with a safe translation)."
+    ].join("\n")
+  },
+  capture: {
+    label: "Capture",
+    intro: "Capture mode. Pick the story, then tell it to me rough, the way you would tell a trusted colleague over coffee. Mess and all. What happened?",
+    prompt: [
+"MODE: CAPTURE (backward-looking). You are interviewing Gareth about past work to produce a full-texture story file for his Career Evidence Bank. Open rough, then dig for what the polished version omits: the PEOPLE (who was afraid, who resisted, who decided, what happened to them; a story told entirely in systems and outcomes is missing its cast), the DECISIONS (the actual call, the options, who disagreed, why it landed where it did), the NUMBERS (reach, engagement, drop-off, budget, scale), the UNCOMFORTABLE BIT (what nearly went wrong, what he would do differently; if the story has no uncomfortable bit it has not been told yet), and the DANGER ZONES (how this story could be told badly to a hiring manager, a peer panel, or HR, and the safe telling for each).",
+"",
+"When asked to produce the final artifact, write a complete markdown story file with this schema: Title; Status line (date captured, what refinement is pending); Organization, role, period; Competency tags (comms-specific, for retrieval); One-line version; The full story (in sections as the story demands); Evidence and numbers; Danger zones when telling this story; Interview cuts (a 30-second spoken cut and a 90-second spoken cut, plus targeted cuts for likely question types); Open items for next capture session."
+    ].join("\n")
+  }
+};
+
+/* ---------- State ---------- */
+
+var state = { mode: null, messages: [] };
+var busy = false;
+
+function store(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
+function read(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+
+function saveSession(){ store("adviser_session", JSON.stringify(state)); }
+function loadSession(){
+  var raw = read("adviser_session");
+  if(!raw) return;
+  try{
+    var s = JSON.parse(raw);
+    if(s && s.mode && MODES[s.mode] && Array.isArray(s.messages)){ state = s; }
+  }catch(e){}
+}
+
+/* ---------- DOM helpers ---------- */
+
+function el(id){ return document.getElementById(id); }
+function esc(t){
+  return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+function md(t){
+  var lines = esc(t).split("\n");
+  var out = [], inList = false, para = [];
+  function flushPara(){
+    if(para.length){ out.push("<p>"+para.join("<br>")+"</p>"); para = []; }
+  }
+  function closeList(){ if(inList){ out.push("</ul>"); inList = false; } }
+  for(var i=0;i<lines.length;i++){
+    var ln = lines[i];
+    var h = ln.match(/^(#{1,4})\s+(.*)$/);
+    var li = ln.match(/^\s*[-*]\s+(.*)$/);
+    var bq = ln.match(/^>\s?(.*)$/);
+    if(h){ flushPara(); closeList(); var n=h[1].length; out.push("<h"+n+">"+inline(h[2])+"</h"+n+">"); }
+    else if(li){ flushPara(); if(!inList){ out.push("<ul>"); inList=true; } out.push("<li>"+inline(li[1])+"</li>"); }
+    else if(bq){ flushPara(); closeList(); out.push("<blockquote>"+inline(bq[1])+"</blockquote>"); }
+    else if(ln.trim()===""){ flushPara(); closeList(); }
+    else { closeList(); para.push(inline(ln)); }
+  }
+  flushPara(); closeList();
+  return out.join("");
+}
+function inline(t){
+  return t
+    .replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")
+    .replace(/(^|[^*])\*([^*]+)\*/g,"$1<em>$2</em>")
+    .replace(/`([^`]+)`/g,"<code>$1</code>");
+}
+
+function addBubble(role, text){
+  var m = document.createElement("div");
+  m.className = "msg " + (role === "user" ? "user" : "adv");
+  var b = document.createElement("div");
+  b.className = "bubble";
+  b.innerHTML = md(text);
+  m.appendChild(b);
+  el("chat").appendChild(m);
+  scrollDown();
+  return b;
+}
+function scrollDown(){ var mn = el("main"); mn.scrollTop = mn.scrollHeight; }
+
+function toast(msg){
+  var t = el("toast");
+  t.textContent = msg;
+  t.style.display = "block";
+  clearTimeout(t._h);
+  t._h = setTimeout(function(){ t.style.display = "none"; }, 5000);
+}
+
+/* ---------- Views ---------- */
+
+function renderKeyNote(){
+  el("keyNote").innerHTML = read("adviser_key")
+    ? "API key saved in this browser. Change it any time via the gear icon."
+    : "First time here: add your Anthropic API key via the gear icon (top right) before starting.";
+}
+
+function showSetup(){
+  state = { mode: null, messages: [] };
+  saveSession();
+  el("setup").style.display = "";
+  el("chat").style.display = "none";
+  el("chat").innerHTML = "";
+  el("composer").style.display = "none";
+  el("btnNew").style.display = "none";
+  el("btnArtifact").style.display = "none";
+  el("modeBadge").style.display = "none";
+  renderKeyNote();
+}
+
+function showChat(){
+  el("setup").style.display = "none";
+  el("chat").style.display = "";
+  el("composer").style.display = "";
+  el("btnNew").style.display = "";
+  el("btnArtifact").style.display = "";
+  var badge = el("modeBadge");
+  badge.style.display = "inline-block";
+  badge.textContent = MODES[state.mode].label;
+  el("chat").innerHTML = "";
+  for(var i=0;i<state.messages.length;i++){
+    addBubble(state.messages[i].role, state.messages[i].content);
+  }
+  el("input").focus();
+}
+
+function startMode(mode){
+  if(!read("adviser_key")){ openSettings(); toast("Add your API key first, then pick a mode."); return; }
+  state = { mode: mode, messages: [] };
+  state.messages.push({ role: "assistant", content: MODES[mode].intro });
+  saveSession();
+  showChat();
+}
+
+/* ---------- API ---------- */
+
+function systemPrompt(){
+  return BASE_PROMPT + "\n\n" + MODES[state.mode].prompt;
+}
+
+function callClaude(messages, maxTokens, onDelta){
+  var key = read("adviser_key");
+  var model = read("adviser_model") || "claude-sonnet-4-5";
+  return fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": key,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    },
+    body: JSON.stringify({
+      model: model,
+      max_tokens: maxTokens,
+      stream: true,
+      system: systemPrompt(),
+      messages: messages
+    })
+  }).then(function(res){
+    if(!res.ok){
+      return res.text().then(function(body){
+        var msg = "API error " + res.status;
+        try{
+          var j = JSON.parse(body);
+          if(j.error && j.error.message) msg += ": " + j.error.message;
+        }catch(e){}
+        if(res.status === 401) msg += " (check your API key in settings)";
+        throw new Error(msg);
+      });
+    }
+    var reader = res.body.getReader();
+    var dec = new TextDecoder();
+    var buf = "", full = "";
+    function pump(){
+      return reader.read().then(function(r){
+        if(r.done) return full;
+        buf += dec.decode(r.value, { stream: true });
+        var lines = buf.split("\n");
+        buf = lines.pop();
+        for(var i=0;i<lines.length;i++){
+          var ln = lines[i];
+          if(ln.indexOf("data: ") !== 0) continue;
+          var payload = ln.slice(6).trim();
+          if(!payload) continue;
+          try{
+            var ev = JSON.parse(payload);
+            if(ev.type === "content_block_delta" && ev.delta && ev.delta.type === "text_delta"){
+              full += ev.delta.text;
+              onDelta(full);
+            }
+          }catch(e){}
+        }
+        return pump();
+      });
+    }
+    return pump();
+  });
+}
+
+function send(){
+  if(busy) return;
+  var input = el("input");
+  var text = input.value.trim();
+  if(!text) return;
+  input.value = "";
+  autosize();
+  state.messages.push({ role: "user", content: text });
+  addBubble("user", text);
+  saveSession();
+  respond(1024);
+}
+
+function respond(maxTokens){
+  busy = true;
+  el("btnSend").disabled = true;
+  el("thinking").style.display = "";
+  scrollDown();
+  var bubble = null;
+  callClaude(state.messages, maxTokens, function(sofar){
+    el("thinking").style.display = "none";
+    if(!bubble) bubble = addBubble("assistant", sofar);
+    else { bubble.innerHTML = md(sofar); scrollDown(); }
+  }).then(function(full){
+    if(full){
+      state.messages.push({ role: "assistant", content: full });
+      saveSession();
+    }
+  }).catch(function(err){
+    toast(err.message || "Something went wrong.");
+    // remove the user turn so it can be resent cleanly on failure before any reply arrived
+    if(!bubble && state.messages.length && state.messages[state.messages.length-1].role === "user"){
+      // keep the text visible in chat; restore it to the input for retry
+      var last = state.messages.pop();
+      el("input").value = last.content;
+      autosize();
+      saveSession();
+    }
+  }).finally(function(){
+    busy = false;
+    el("btnSend").disabled = false;
+    el("thinking").style.display = "none";
+  });
+}
+
+function generateArtifact(){
+  if(busy || !state.mode) return;
+  var ask = state.mode === "capture"
+    ? "Generate the final story file for this session now, following the capture schema exactly. Output pure markdown only, no preamble and no commentary."
+    : "Generate the final written review for this session now: Strengths, Gaps, Unresolved decisions, and Danger zones where relevant. Output pure markdown only, no preamble and no commentary.";
+  busy = true;
+  el("btnArtifact").disabled = true;
+  el("thinking").style.display = "";
+  var msgs = state.messages.concat([{ role: "user", content: ask }]);
+  var box = el("artifactText");
+  box.textContent = "";
+  el("artifactTitle").textContent = state.mode === "capture" ? "Story file" : "Session review";
+  el("artifactOverlay").classList.add("open");
+  callClaude(msgs, 8192, function(sofar){
+    el("thinking").style.display = "none";
+    box.textContent = sofar;
+  }).then(function(full){
+    box.textContent = full;
+    store("adviser_last_artifact", full);
+  }).catch(function(err){
+    el("artifactOverlay").classList.remove("open");
+    toast(err.message || "Could not generate the artifact.");
+  }).finally(function(){
+    busy = false;
+    el("btnArtifact").disabled = false;
+    el("thinking").style.display = "none";
+  });
+}
+
+/* ---------- Settings ---------- */
+
+function openSettings(){
+  el("apiKey").value = read("adviser_key") || "";
+  el("modelId").value = read("adviser_model") || "claude-sonnet-4-5";
+  el("settingsOverlay").classList.add("open");
+}
+
+/* ---------- Wiring ---------- */
+
+function autosize(){
+  var t = el("input");
+  t.style.height = "auto";
+  t.style.height = Math.min(t.scrollHeight, 160) + "px";
+}
+
+document.addEventListener("DOMContentLoaded", function(){
+  loadSession();
+
+  var cards = document.querySelectorAll(".mode-card");
+  for(var i=0;i<cards.length;i++){
+    cards[i].addEventListener("click", function(){ startMode(this.getAttribute("data-mode")); });
+  }
+
+  el("btnSend").addEventListener("click", send);
+  el("input").addEventListener("keydown", function(e){
+    if(e.key === "Enter" && !e.shiftKey && !e.isComposing){
+      e.preventDefault(); send();
+    }
+  });
+  el("input").addEventListener("input", autosize);
+
+  el("btnNew").addEventListener("click", function(){
+    if(state.messages.length > 1 && !confirm("Start a new session? The current one is kept until you confirm, then cleared. Generate the artifact first if you want to keep this work.")) return;
+    showSetup();
+  });
+  el("btnSettings").addEventListener("click", openSettings);
+  el("btnSaveSettings").addEventListener("click", function(){
+    var k = el("apiKey").value.trim();
+    var m = el("modelId").value.trim() || "claude-sonnet-4-5";
+    if(k) store("adviser_key", k); else localStorage.removeItem("adviser_key");
+    store("adviser_model", m);
+    el("settingsOverlay").classList.remove("open");
+    renderKeyNote();
+  });
+  el("btnArtifact").addEventListener("click", generateArtifact);
+
+  el("btnCopyArtifact").addEventListener("click", function(){
+    var text = el("artifactText").textContent;
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){ toast("Copied."); });
+    } else { toast("Copy not available in this browser; use Download."); }
+  });
+  el("btnDownloadArtifact").addEventListener("click", function(){
+    var text = el("artifactText").textContent;
+    var d = new Date();
+    var stamp = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+    var name = (state.mode === "capture" ? "Story - captured " : "Adviser review - ") + stamp + ".md";
+    var blob = new Blob([text], { type: "text/markdown" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  });
+
+  var closers = document.querySelectorAll("[data-close]");
+  for(var j=0;j<closers.length;j++){
+    closers[j].addEventListener("click", function(){
+      this.closest(".overlay").classList.remove("open");
+    });
+  }
+
+  if(state.mode && state.messages.length){ showChat(); } else { showSetup(); }
+});
+</script>
+</body>
+</html>
