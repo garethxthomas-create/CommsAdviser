@@ -4,18 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The Adviser</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root{
     --bg:#f6f5f1; --panel:#ffffff; --ink:#1d2733; --ink-soft:#5b6773;
     --accent:#0f5d5a; --accent-ink:#ffffff; --line:#e3e0d8;
     --user-bubble:#0f5d5a; --user-ink:#ffffff; --adv-bubble:#ffffff;
-    --danger:#a33c2f; --radius:14px;
+    --danger:#a33c2f; --chip:#ecebe4; --radius:14px;
   }
   @media (prefers-color-scheme: dark){
     :root{
       --bg:#141a1f; --panel:#1d252c; --ink:#e8e6e1; --ink-soft:#9aa5ae;
       --accent:#3fa39e; --accent-ink:#0e1518; --line:#2c363f;
-      --user-bubble:#0f5d5a; --user-ink:#f2f1ec; --adv-bubble:#1d252c;
+      --user-bubble:#0f5d5a; --user-ink:#f2f1ec; --adv-bubble:#1d252c; --chip:#242e37;
     }
   }
   *{box-sizing:border-box}
@@ -26,7 +27,7 @@
     display:flex; flex-direction:column;
   }
   header{
-    display:flex; align-items:center; gap:10px; padding:12px 16px;
+    display:flex; align-items:center; gap:8px; padding:12px 16px;
     border-bottom:1px solid var(--line); background:var(--panel);
     position:sticky; top:0; z-index:5;
   }
@@ -47,9 +48,34 @@
   main{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch}
   .wrap{max-width:760px; margin:0 auto; padding:20px 16px 8px}
 
+  /* Bank */
+  .bank-toolbar{display:flex; gap:8px; margin-bottom:14px}
+  .bank-toolbar input{
+    flex:1; font:inherit; padding:9px 12px; border-radius:10px;
+    border:1px solid var(--line); background:var(--panel); color:var(--ink);
+  }
+  .bank-actions{display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap}
+  .tagrow{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px}
+  .chip{
+    font-size:12.5px; padding:4px 10px; border-radius:999px; background:var(--chip);
+    border:1px solid var(--line); cursor:pointer; color:var(--ink-soft);
+  }
+  .chip.on{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+  .story{
+    width:100%; text-align:left; display:block; padding:14px 16px; margin-bottom:10px;
+    border:1px solid var(--line); border-radius:var(--radius); background:var(--panel);
+  }
+  .story:hover{border-color:var(--accent)}
+  .story .t{font-weight:650; margin-bottom:3px}
+  .story .m{font-size:12.5px; color:var(--ink-soft)}
+  .empty{
+    text-align:center; color:var(--ink-soft); padding:40px 10px; font-size:15px;
+  }
+  .empty .big{font-size:17px; color:var(--ink); font-weight:600; margin-bottom:8px}
+
   /* Setup */
-  .setup h2{font-size:22px; margin:26px 0 6px}
-  .setup p.lead{color:var(--ink-soft); margin:0 0 22px}
+  .setup h2{font-size:21px; margin:10px 0 6px}
+  .setup p.lead{color:var(--ink-soft); margin:0 0 20px}
   .modes{display:grid; gap:14px; grid-template-columns:1fr}
   @media(min-width:600px){.modes{grid-template-columns:1fr 1fr}}
   .mode-card{
@@ -59,8 +85,6 @@
   .mode-card:hover{border-color:var(--accent)}
   .mode-card .t{font-weight:700; font-size:17px; margin-bottom:6px}
   .mode-card .d{color:var(--ink-soft); font-size:14px}
-  .keynote{margin-top:26px; font-size:13px; color:var(--ink-soft)}
-  .keynote a{color:var(--accent)}
 
   /* Chat */
   .msg{display:flex; margin:14px 0}
@@ -74,7 +98,7 @@
   .bubble p{margin:.5em 0}
   .bubble p:first-child{margin-top:0}
   .bubble p:last-child{margin-bottom:0}
-  .bubble h1,.bubble h2,.bubble h3{margin:.7em 0 .3em; line-height:1.25}
+  .bubble h1,.bubble h2,.bubble h3,.bubble h4{margin:.7em 0 .3em; line-height:1.25}
   .bubble ul{margin:.4em 0; padding-left:1.3em}
   .bubble blockquote{margin:.5em 0; padding:2px 12px; border-left:3px solid var(--accent); color:var(--ink-soft)}
   .bubble code{background:rgba(127,127,127,.15); border-radius:4px; padding:1px 5px; font-size:.9em}
@@ -102,12 +126,12 @@
   .overlay.open{display:flex}
   .modal{
     background:var(--panel); border-radius:16px; border:1px solid var(--line);
-    width:100%; max-width:640px; max-height:86vh; display:flex; flex-direction:column;
+    width:100%; max-width:680px; max-height:88vh; display:flex; flex-direction:column;
   }
   .modal .m-head{display:flex; align-items:center; padding:14px 18px; border-bottom:1px solid var(--line)}
   .modal .m-head h3{margin:0; font-size:16px; flex:1}
   .modal .m-body{padding:16px 18px; overflow-y:auto}
-  .modal .m-foot{padding:12px 18px; border-top:1px solid var(--line); display:flex; gap:8px; justify-content:flex-end}
+  .modal .m-foot{padding:12px 18px; border-top:1px solid var(--line); display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap}
   .field{margin-bottom:14px}
   .field label{display:block; font-size:13px; font-weight:600; margin-bottom:5px}
   .field input{
@@ -115,15 +139,18 @@
     border:1px solid var(--line); background:var(--bg); color:var(--ink);
   }
   .hint{font-size:12.5px; color:var(--ink-soft); margin-top:5px}
-  #artifactText{
-    white-space:pre-wrap; font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  .divider{border-top:1px solid var(--line); margin:18px 0 14px}
+  #artifactText, #storyBody{
     background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:14px;
   }
+  #artifactText{white-space:pre-wrap; font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  #storyBody h1,#storyBody h2,#storyBody h3{line-height:1.3}
   .toast{
     position:fixed; left:50%; transform:translateX(-50%); bottom:90px; z-index:30;
     background:var(--danger); color:#fff; padding:10px 16px; border-radius:10px;
     font-size:14px; display:none; max-width:90%;
   }
+  .toast.ok{background:var(--accent); color:var(--accent-ink)}
 </style>
 </head>
 <body>
@@ -132,15 +159,31 @@
   <h1>The Adviser</h1>
   <span class="badge" id="modeBadge"></span>
   <div class="spacer"></div>
-  <button class="quiet" id="btnArtifact" title="End session and generate the written artifact" style="display:none">Finish &amp; write up</button>
-  <button class="quiet" id="btnNew" style="display:none">New</button>
+  <button class="quiet" id="btnBank" style="display:none">Bank</button>
+  <button class="quiet" id="btnArtifact" style="display:none" title="End the session and generate the written artifact">Finish &amp; write up</button>
   <button class="quiet" id="btnSettings" aria-label="Settings">&#9881;</button>
 </header>
 
 <main id="main">
   <div class="wrap">
 
-    <div id="setup" class="setup">
+    <!-- BANK (home) -->
+    <div id="bankView">
+      <div class="bank-actions">
+        <button class="primary" id="btnNewCapture">+ Capture a story</button>
+        <button id="btnNewChallenge">Challenge a piece of work</button>
+        <button class="quiet" id="btnRefresh">Refresh</button>
+      </div>
+      <div class="bank-toolbar">
+        <input id="search" type="search" placeholder="Search stories, tags, content&hellip;">
+      </div>
+      <div class="tagrow" id="tagRow"></div>
+      <div id="storyList"></div>
+      <div class="empty" id="bankEmpty" style="display:none"></div>
+    </div>
+
+    <!-- MODE PICK -->
+    <div id="setupView" class="setup" style="display:none">
       <h2>What kind of session?</h2>
       <p class="lead">A constructively difficult colleague. One question at a time. It ends with something written.</p>
       <div class="modes">
@@ -150,13 +193,13 @@
         </button>
         <button class="mode-card" data-mode="capture">
           <div class="t">Capture</div>
-          <div class="d">Interview me about past work and produce a full-texture story file for the Career Evidence Bank.</div>
+          <div class="d">An interview about past work that ends with a full-texture story file saved to the bank.</div>
         </button>
       </div>
-      <p class="keynote" id="keyNote"></p>
     </div>
 
-    <div id="chat" style="display:none"></div>
+    <!-- CHAT -->
+    <div id="chatView" style="display:none"></div>
     <div class="thinking" id="thinking" style="display:none">The Adviser is thinking&hellip;</div>
   </div>
 </main>
@@ -168,6 +211,7 @@
   </div>
 </div>
 
+<!-- SETTINGS -->
 <div class="overlay" id="settingsOverlay">
   <div class="modal">
     <div class="m-head"><h3>Settings</h3><button class="quiet" data-close>&#10005;</button></div>
@@ -175,12 +219,27 @@
       <div class="field">
         <label for="apiKey">Anthropic API key</label>
         <input id="apiKey" type="password" placeholder="sk-ant-..." autocomplete="off">
-        <div class="hint">Stored only in this browser. Create one at console.anthropic.com (set a monthly spend limit while you are there; this app costs cents per session).</div>
+        <div class="hint">From console.anthropic.com. Stored only in this browser. Set a monthly spend limit there; sessions cost cents.</div>
       </div>
       <div class="field">
         <label for="modelId">Model</label>
         <input id="modelId" type="text">
-        <div class="hint">Default: claude-sonnet-4-5. Change here if Anthropic renames or you want a different model.</div>
+        <div class="hint">Default: claude-sonnet-4-5.</div>
+      </div>
+      <div class="divider"></div>
+      <div class="field">
+        <label for="gClientId">Google OAuth Client ID</label>
+        <input id="gClientId" type="text" placeholder="1234567890-xxxx.apps.googleusercontent.com">
+        <div class="hint">From your Google Cloud project (see SETUP.md). Needed once per app, not per device.</div>
+      </div>
+      <div class="field">
+        <label for="folderId">Evidence Bank folder ID</label>
+        <input id="folderId" type="text">
+        <div class="hint">The Drive folder that holds your story files. Default is your Career Evidence Bank.</div>
+      </div>
+      <div class="field">
+        <button id="btnConnectDrive">Connect Google Drive</button>
+        <span class="hint" id="driveStatus" style="margin-left:8px"></span>
       </div>
     </div>
     <div class="m-foot">
@@ -190,13 +249,33 @@
   </div>
 </div>
 
+<!-- ARTIFACT -->
 <div class="overlay" id="artifactOverlay">
   <div class="modal">
     <div class="m-head"><h3 id="artifactTitle">Session artifact</h3><button class="quiet" data-close>&#10005;</button></div>
-    <div class="m-body"><div id="artifactText"></div></div>
+    <div class="m-body">
+      <div class="field">
+        <label for="artifactName">File name</label>
+        <input id="artifactName" type="text">
+      </div>
+      <div id="artifactText"></div>
+    </div>
     <div class="m-foot">
       <button id="btnCopyArtifact">Copy</button>
-      <button class="primary" id="btnDownloadArtifact">Download .md</button>
+      <button id="btnDownloadArtifact">Download .md</button>
+      <button class="primary" id="btnSaveArtifact">Save to bank</button>
+    </div>
+  </div>
+</div>
+
+<!-- STORY VIEWER -->
+<div class="overlay" id="storyOverlay">
+  <div class="modal">
+    <div class="m-head"><h3 id="storyTitle">Story</h3><button class="quiet" data-close>&#10005;</button></div>
+    <div class="m-body"><div id="storyBody"></div></div>
+    <div class="m-foot">
+      <button id="btnCopyStory">Copy markdown</button>
+      <button data-close class="primary">Close</button>
     </div>
   </div>
 </div>
@@ -206,21 +285,27 @@
 <script>
 "use strict";
 
-/* ---------- The Adviser's brain ---------- */
+/* ================= The Adviser's brain (v2, recalibrated) ================= */
 
 var BASE_PROMPT = [
-"You are The Adviser: a constructively difficult senior communications colleague for Gareth Thomas, a senior internal and executive communications professional with more than 20 years of experience (executive comms, change, AI-led communications transformation). You are not a writer. Your job is to improve the quality of his thinking and leave behind a written artifact. Never explain communications basics to him. Challenge at the level of one communications director talking to another.",
+"You are The Adviser: a senior communications colleague for Gareth Thomas, a senior internal and executive communications professional with more than 20 years of experience (executive comms, change, AI-led communications transformation). You are not a writer. Your job is to improve the quality of his thinking and leave behind a written artifact. Never explain communications basics to him. Operate at the level of one communications director talking to another.",
 "",
-"Temperament rules, non-negotiable:",
-"1. Ask exactly ONE question per reply. Never a list of questions. Each question follows from his last answer.",
+"Method rules:",
+"1. Ask exactly ONE question per reply. Each question follows from his last answer. Never a list of questions.",
 "2. Adapt; do not march through a script. If an answer opens something important, follow it.",
-"3. Hold the line. When you hit a contradiction, stop on it and insist it is resolved before moving on. Never flag-and-continue.",
-"4. Catch deflection. Process language, passive voice, and distancing (for example: 'the role disappeared', 'it was not my decision', 'as with any good process') are signals to dig. Name the deflection plainly and ask the human question underneath.",
-"5. Never accept 'that does not count' or 'that never happens'. The best material hides behind those phrases. Widen the definition and probe again. (Precedent: 'no disagreements in 20 years' concealed a monthly, data-backed disagreement with a CEO.)",
-"6. Data beats assertion. Ask what evidence supports a claim, and attach every number offered.",
-"7. Distinguish the honest version of a story from the impressive version. The honest texture is almost always stronger, and lines optimized for one audience can be dangerous in front of another.",
-"8. Keep replies under 150 words until the closing artifact: a brief observation, then the one question.",
-"9. Tone: direct, professional, warm, zero flattery, no em dashes, US spelling. Conclusion first. Push hard but constructively; the judgment always returns to him."
+"3. Every reply must ADD something beyond the question: an observation, a reframe, a connection to something he said earlier, or a piece of structure. A bare question is a wasted turn.",
+"4. Data beats assertion, in both directions. Ask what evidence supports a claim; attach every number he offers.",
+"5. Distinguish the honest version of a story from the impressive version. The honest texture is almost always stronger, and lines optimized for one audience can be dangerous in front of another.",
+"",
+"Calibration rules (these matter most):",
+"6. Challenge is a scalpel, not a posture. Push hard only at load-bearing moments: a genuine contradiction, a deflection (process language, passive voice, distancing), an unsupported claim that matters, or a framing that would hurt him in the intended room. At those moments, hold the line until it is resolved; never flag-and-continue.",
+"7. Everywhere else, build. Name what is solid and extend it. Acknowledging strong material plainly is accuracy, not flattery.",
+"8. Never two consecutive replies that only push back. If the last reply challenged, this one must first contribute before it questions.",
+"9. Match intensity to stakes. Exploratory thinking gets curiosity; near-final decisions and high-risk framings get rigor.",
+"10. When he pushes back with new reasoning, weigh it honestly and concede when he is right. Conceding well is what makes the next challenge land. (Precedent: his 'no disagreements in 20 years' position survived pressure AND concealed a monthly data-backed disagreement with a CEO. Both things were true; the resolution came from widening the definition, not from winning the argument.)",
+"11. Do not accept 'that does not count' or 'that never happens' at face value; the best material hides behind those phrases. Widen the definition and probe again, warmly.",
+"",
+"Tone: direct, professional, warm, no flattery, no em dashes, US spelling. Conclusion first. Keep replies under 150 words until the closing artifact. The judgment always returns to him."
 ].join("\n");
 
 var MODES = {
@@ -228,9 +313,11 @@ var MODES = {
     label: "Challenge",
     intro: "Challenge mode. Tell me the situation, rough. What are you trying to do, and what do you have so far?",
     prompt: [
-"MODE: CHALLENGE (forward-looking). Gareth brings live work: a brief, plan, draft strategy, stakeholder request, or interview answer. Interrogate it progressively. Draw on questions like these as the conversation demands, never as a checklist: Who is this actually for, and what do they currently think, feel, or do? What should change, and is communication actually the solution? What happens if you say nothing? Who disagrees, who loses, which leader pushes back? What will the audience infer that was never intended? What are people afraid of, and does anything here answer that fear honestly? What is the evidence this will work, and would the proposed measures actually detect success? Is this trying to achieve more than one objective?",
+"MODE: CHALLENGE (forward-looking). Gareth brings live work: a brief, plan, draft strategy, stakeholder request, negotiation, or interview answer. Interrogate it progressively. Draw on questions like these as the conversation demands, never as a checklist: Who is this actually for, and what do they currently think, feel, or do? What should change, and is communication actually the solution? What happens if you say nothing? Who disagrees, who loses, which leader pushes back? What will the audience infer that was never intended? What are people afraid of, and does anything here answer that fear honestly? What is the evidence this will work, and would the proposed measures actually detect success?",
 "",
-"When asked to produce the final artifact, write a markdown review with these sections: Strengths (what is solid and why), Gaps (what is missing or thin, stated bluntly), Unresolved decisions (choices that must be made, and by whom, before this ships), and where relevant Danger zones (specific phrasings or framings that would hurt in the intended room, each with a safe translation)."
+"If the bank index below contains relevant prior stories or answers, connect them: remind him what he already knows.",
+"",
+"When asked to produce the final artifact, write a markdown review titled with the topic, with sections: Strengths (what is solid and why), Gaps (what is missing or thin, stated bluntly), Unresolved decisions (choices that must be made, and by whom, before this ships), and where relevant Danger zones (specific phrasings or framings that would hurt in the intended room, each with a safe translation)."
     ].join("\n")
   },
   capture: {
@@ -239,41 +326,51 @@ var MODES = {
     prompt: [
 "MODE: CAPTURE (backward-looking). You are interviewing Gareth about past work to produce a full-texture story file for his Career Evidence Bank. Open rough, then dig for what the polished version omits: the PEOPLE (who was afraid, who resisted, who decided, what happened to them; a story told entirely in systems and outcomes is missing its cast), the DECISIONS (the actual call, the options, who disagreed, why it landed where it did), the NUMBERS (reach, engagement, drop-off, budget, scale), the UNCOMFORTABLE BIT (what nearly went wrong, what he would do differently; if the story has no uncomfortable bit it has not been told yet), and the DANGER ZONES (how this story could be told badly to a hiring manager, a peer panel, or HR, and the safe telling for each).",
 "",
-"When asked to produce the final artifact, write a complete markdown story file with this schema: Title; Status line (date captured, what refinement is pending); Organization, role, period; Competency tags (comms-specific, for retrieval); One-line version; The full story (in sections as the story demands); Evidence and numbers; Danger zones when telling this story; Interview cuts (a 30-second spoken cut and a 90-second spoken cut, plus targeted cuts for likely question types); Open items for next capture session."
+"Balance rules 6 to 9 apply here with extra warmth: capture is archaeology, not cross-examination. Dig persistently, but let him tell it.",
+"",
+"When asked to produce the final artifact, write a complete markdown story file with this schema: # Title; Status line (date captured, refinement pending); Organization, role, period; Competency tags (comms-specific, comma-separated, for retrieval); One-line version; The full story (sections as the story demands); Evidence and numbers; Danger zones when telling this story; Interview cuts (a 30-second spoken cut and a 90-second spoken cut, plus targeted cuts for likely question types); Open items for next capture session."
     ].join("\n")
   }
 };
 
-/* ---------- State ---------- */
+var DEFAULT_FOLDER = "1vZhiPTU7jRjg7CN8T0UA2AmTn5kL1uRB";
 
-var state = { mode: null, messages: [] };
+/* ================= State ================= */
+
+var state = { view: "bank", mode: null, messages: [] };
 var busy = false;
+var stories = [];            // {id, name, mimeType, modifiedTime, content, tags[]}
+var activeTags = {};
+var gToken = null, gTokenExp = 0, tokenClient = null;
 
 function store(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
 function read(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
-
-function saveSession(){ store("adviser_session", JSON.stringify(state)); }
+function saveSession(){ store("adviser_session", JSON.stringify({ mode: state.mode, messages: state.messages })); }
 function loadSession(){
   var raw = read("adviser_session");
   if(!raw) return;
   try{
     var s = JSON.parse(raw);
-    if(s && s.mode && MODES[s.mode] && Array.isArray(s.messages)){ state = s; }
+    if(s && s.mode && MODES[s.mode] && Array.isArray(s.messages) && s.messages.length){
+      state.mode = s.mode; state.messages = s.messages;
+    }
   }catch(e){}
 }
 
-/* ---------- DOM helpers ---------- */
+/* ================= Tiny markdown ================= */
 
 function el(id){ return document.getElementById(id); }
-function esc(t){
-  return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+function esc(t){ return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function inline(t){
+  return t
+    .replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")
+    .replace(/(^|[^*])\*([^*]+)\*/g,"$1<em>$2</em>")
+    .replace(/`([^`]+)`/g,"<code>$1</code>");
 }
 function md(t){
   var lines = esc(t).split("\n");
   var out = [], inList = false, para = [];
-  function flushPara(){
-    if(para.length){ out.push("<p>"+para.join("<br>")+"</p>"); para = []; }
-  }
+  function flushPara(){ if(para.length){ out.push("<p>"+para.join("<br>")+"</p>"); para = []; } }
   function closeList(){ if(inList){ out.push("</ul>"); inList = false; } }
   for(var i=0;i<lines.length;i++){
     var ln = lines[i];
@@ -289,13 +386,37 @@ function md(t){
   flushPara(); closeList();
   return out.join("");
 }
-function inline(t){
-  return t
-    .replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")
-    .replace(/(^|[^*])\*([^*]+)\*/g,"$1<em>$2</em>")
-    .replace(/`([^`]+)`/g,"<code>$1</code>");
+
+function toast(msg, ok){
+  var t = el("toast");
+  t.textContent = msg;
+  t.className = "toast" + (ok ? " ok" : "");
+  t.style.display = "block";
+  clearTimeout(t._h);
+  t._h = setTimeout(function(){ t.style.display = "none"; }, 4500);
 }
 
+/* ================= Views ================= */
+
+function show(view){
+  state.view = view;
+  el("bankView").style.display = view === "bank" ? "" : "none";
+  el("setupView").style.display = view === "setup" ? "" : "none";
+  el("chatView").style.display = view === "chat" ? "" : "none";
+  el("composer").style.display = view === "chat" ? "" : "none";
+  el("btnBank").style.display = view === "bank" ? "none" : "";
+  el("btnArtifact").style.display = view === "chat" ? "" : "none";
+  var badge = el("modeBadge");
+  if(view === "chat" && state.mode){ badge.style.display = "inline-block"; badge.textContent = MODES[state.mode].label; }
+  else badge.style.display = "none";
+}
+
+function renderChat(){
+  el("chatView").innerHTML = "";
+  for(var i=0;i<state.messages.length;i++){
+    addBubble(state.messages[i].role, state.messages[i].content);
+  }
+}
 function addBubble(role, text){
   var m = document.createElement("div");
   m.className = "msg " + (role === "user" ? "user" : "adv");
@@ -303,69 +424,195 @@ function addBubble(role, text){
   b.className = "bubble";
   b.innerHTML = md(text);
   m.appendChild(b);
-  el("chat").appendChild(m);
+  el("chatView").appendChild(m);
   scrollDown();
   return b;
 }
 function scrollDown(){ var mn = el("main"); mn.scrollTop = mn.scrollHeight; }
 
-function toast(msg){
-  var t = el("toast");
-  t.textContent = msg;
-  t.style.display = "block";
-  clearTimeout(t._h);
-  t._h = setTimeout(function(){ t.style.display = "none"; }, 5000);
-}
-
-/* ---------- Views ---------- */
-
-function renderKeyNote(){
-  el("keyNote").innerHTML = read("adviser_key")
-    ? "API key saved in this browser. Change it any time via the gear icon."
-    : "First time here: add your Anthropic API key via the gear icon (top right) before starting.";
-}
-
-function showSetup(){
-  state = { mode: null, messages: [] };
+function startMode(mode){
+  if(!read("adviser_key")){ openSettings(); toast("Add your Anthropic API key first."); return; }
+  state.mode = mode;
+  state.messages = [{ role: "assistant", content: MODES[mode].intro }];
   saveSession();
-  el("setup").style.display = "";
-  el("chat").style.display = "none";
-  el("chat").innerHTML = "";
-  el("composer").style.display = "none";
-  el("btnNew").style.display = "none";
-  el("btnArtifact").style.display = "none";
-  el("modeBadge").style.display = "none";
-  renderKeyNote();
-}
-
-function showChat(){
-  el("setup").style.display = "none";
-  el("chat").style.display = "";
-  el("composer").style.display = "";
-  el("btnNew").style.display = "";
-  el("btnArtifact").style.display = "";
-  var badge = el("modeBadge");
-  badge.style.display = "inline-block";
-  badge.textContent = MODES[state.mode].label;
-  el("chat").innerHTML = "";
-  for(var i=0;i<state.messages.length;i++){
-    addBubble(state.messages[i].role, state.messages[i].content);
-  }
+  renderChat();
+  show("chat");
   el("input").focus();
 }
 
-function startMode(mode){
-  if(!read("adviser_key")){ openSettings(); toast("Add your API key first, then pick a mode."); return; }
-  state = { mode: mode, messages: [] };
-  state.messages.push({ role: "assistant", content: MODES[mode].intro });
-  saveSession();
-  showChat();
+/* ================= Bank rendering ================= */
+
+function parseTags(content){
+  var m = content.match(/Competency tags[:\*\s]*([^\n]+)/i);
+  if(!m) return [];
+  return m[1].replace(/\*\*/g,"").split(",").map(function(s){ return s.trim(); }).filter(function(s){ return s && s.length < 40; });
 }
 
-/* ---------- API ---------- */
+function renderBank(){
+  var q = (el("search").value || "").toLowerCase();
+  var tagsOn = Object.keys(activeTags).filter(function(k){ return activeTags[k]; });
+  var list = el("storyList");
+  list.innerHTML = "";
+
+  // tag row
+  var allTags = {};
+  stories.forEach(function(s){ (s.tags||[]).forEach(function(t){ allTags[t] = true; }); });
+  var tr = el("tagRow");
+  tr.innerHTML = "";
+  Object.keys(allTags).sort().forEach(function(t){
+    var c = document.createElement("span");
+    c.className = "chip" + (activeTags[t] ? " on" : "");
+    c.textContent = t;
+    c.addEventListener("click", function(){ activeTags[t] = !activeTags[t]; renderBank(); });
+    tr.appendChild(c);
+  });
+
+  var shown = 0;
+  stories.forEach(function(s){
+    var hay = (s.name + " " + (s.content||"") ).toLowerCase();
+    if(q && hay.indexOf(q) === -1) return;
+    for(var i=0;i<tagsOn.length;i++){ if((s.tags||[]).indexOf(tagsOn[i]) === -1) return; }
+    shown++;
+    var b = document.createElement("button");
+    b.className = "story";
+    var d = s.modifiedTime ? new Date(s.modifiedTime).toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}) : "";
+    b.innerHTML = "<div class='t'>" + esc(s.name.replace(/\.md$/,"")) + "</div>" +
+                  "<div class='m'>" + esc(d) + (s.tags && s.tags.length ? " &middot; " + esc(s.tags.slice(0,4).join(", ")) : "") + "</div>";
+    b.addEventListener("click", function(){ openStory(s); });
+    list.appendChild(b);
+  });
+
+  var empty = el("bankEmpty");
+  if(!gToken && !stories.length){
+    empty.style.display = "";
+    empty.innerHTML = read("adviser_gclient")
+      ? "<div class='big'>Connect Google Drive</div>Your evidence bank lives in Drive. <br><br><button class='primary' id='btnConnectInline'>Connect Drive</button>"
+      : "<div class='big'>One-time setup needed</div>Add your Google Client ID in settings (gear icon), then connect Drive. SETUP.md has the ten-minute walkthrough.";
+    var ib = el("btnConnectInline");
+    if(ib) ib.addEventListener("click", connectDrive);
+  } else if(!shown){
+    empty.style.display = "";
+    empty.innerHTML = stories.length ? "Nothing matches that search." : "<div class='big'>The bank is empty</div>Capture your first story and it will appear here.";
+  } else {
+    empty.style.display = "none";
+  }
+}
+
+function openStory(s){
+  el("storyTitle").textContent = s.name.replace(/\.md$/,"");
+  el("storyBody").innerHTML = md(s.content || "(no content loaded; refresh the bank)");
+  el("storyOverlay").classList.add("open");
+  el("btnCopyStory").onclick = function(){
+    if(navigator.clipboard) navigator.clipboard.writeText(s.content || "").then(function(){ toast("Copied.", true); });
+  };
+}
+
+/* ================= Google Drive ================= */
+
+function driveReady(){ return gToken && Date.now() < gTokenExp - 60000; }
+
+function connectDrive(){
+  var cid = read("adviser_gclient");
+  if(!cid){ openSettings(); toast("Add your Google Client ID first (see SETUP.md)."); return; }
+  if(!(window.google && google.accounts && google.accounts.oauth2)){
+    toast("Google sign-in library still loading; try again in a second.");
+    return;
+  }
+  if(!tokenClient){
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: cid,
+      scope: "https://www.googleapis.com/auth/drive",
+      callback: function(resp){
+        if(resp && resp.access_token){
+          gToken = resp.access_token;
+          gTokenExp = Date.now() + (resp.expires_in ? resp.expires_in * 1000 : 3500000);
+          el("driveStatus").textContent = "Connected.";
+          toast("Drive connected.", true);
+          refreshBank();
+        } else if(resp && resp.error){
+          toast("Google auth: " + resp.error);
+        }
+      }
+    });
+  }
+  tokenClient.requestAccessToken({ prompt: gToken ? "" : "consent" });
+}
+
+function driveFetch(url, opts){
+  opts = opts || {};
+  opts.headers = opts.headers || {};
+  opts.headers["Authorization"] = "Bearer " + gToken;
+  return fetch(url, opts).then(function(r){
+    if(r.status === 401){ gToken = null; renderBank(); throw new Error("Drive session expired; hit Refresh to reconnect."); }
+    if(!r.ok) return r.text().then(function(b){ throw new Error("Drive error " + r.status); });
+    return r;
+  });
+}
+
+function refreshBank(){
+  if(!driveReady()){ connectDrive(); return; }
+  var folder = read("adviser_folder") || DEFAULT_FOLDER;
+  var q = encodeURIComponent("'" + folder + "' in parents and trashed = false");
+  el("btnRefresh").disabled = true;
+  driveFetch("https://www.googleapis.com/drive/v3/files?q=" + q + "&fields=files(id,name,mimeType,modifiedTime)&pageSize=200&orderBy=modifiedTime desc")
+  .then(function(r){ return r.json(); })
+  .then(function(j){
+    var files = (j.files || []).filter(function(f){
+      return f.mimeType === "application/vnd.google-apps.document" || /\.(md|txt)$/i.test(f.name) || f.mimeType.indexOf("text/") === 0;
+    });
+    return Promise.all(files.map(function(f){
+      var url = f.mimeType === "application/vnd.google-apps.document"
+        ? "https://www.googleapis.com/drive/v3/files/" + f.id + "/export?mimeType=text/plain"
+        : "https://www.googleapis.com/drive/v3/files/" + f.id + "?alt=media";
+      return driveFetch(url).then(function(r){ return r.text(); }).then(function(txt){
+        return { id: f.id, name: f.name, mimeType: f.mimeType, modifiedTime: f.modifiedTime, content: txt, tags: parseTags(txt) };
+      }).catch(function(){ return { id: f.id, name: f.name, mimeType: f.mimeType, modifiedTime: f.modifiedTime, content: "", tags: [] }; });
+    }));
+  })
+  .then(function(loaded){
+    stories = loaded;
+    store("adviser_bank_cache", JSON.stringify(stories.map(function(s){ return { name: s.name, tags: s.tags }; })));
+    renderBank();
+  })
+  .catch(function(e){ toast(e.message || "Could not load the bank."); })
+  .finally(function(){ el("btnRefresh").disabled = false; });
+}
+
+function saveToBank(name, content){
+  if(!driveReady()){ connectDrive(); toast("Connect Drive, then hit Save to bank again."); return Promise.reject(new Error("not connected")); }
+  var folder = read("adviser_folder") || DEFAULT_FOLDER;
+  var boundary = "adviser_boundary_2718";
+  var meta = { name: name, parents: [folder], mimeType: "text/markdown" };
+  var body =
+    "--" + boundary + "\r\n" +
+    "Content-Type: application/json; charset=UTF-8\r\n\r\n" +
+    JSON.stringify(meta) + "\r\n" +
+    "--" + boundary + "\r\n" +
+    "Content-Type: text/markdown; charset=UTF-8\r\n\r\n" +
+    content + "\r\n" +
+    "--" + boundary + "--";
+  return driveFetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+    method: "POST",
+    headers: { "Content-Type": "multipart/related; boundary=" + boundary },
+    body: body
+  }).then(function(r){ return r.json(); });
+}
+
+/* ================= Anthropic ================= */
+
+function bankIndex(){
+  if(!stories.length){
+    var cached = read("adviser_bank_cache");
+    if(cached){ try{ return JSON.parse(cached).map(function(s){ return "- " + s.name + (s.tags.length ? " (" + s.tags.join(", ") + ")" : ""); }).join("\n"); }catch(e){} }
+    return "";
+  }
+  return stories.map(function(s){ return "- " + s.name.replace(/\.md$/,"") + (s.tags.length ? " (" + s.tags.join(", ") + ")" : ""); }).join("\n");
+}
 
 function systemPrompt(){
-  return BASE_PROMPT + "\n\n" + MODES[state.mode].prompt;
+  var idx = bankIndex();
+  return BASE_PROMPT + "\n\n" + MODES[state.mode].prompt +
+    (idx ? "\n\nBANK INDEX (titles and tags of what already exists in his Career Evidence Bank):\n" + idx : "");
 }
 
 function callClaude(messages, maxTokens, onDelta){
@@ -379,28 +626,17 @@ function callClaude(messages, maxTokens, onDelta){
       "anthropic-version": "2023-06-01",
       "anthropic-dangerous-direct-browser-access": "true"
     },
-    body: JSON.stringify({
-      model: model,
-      max_tokens: maxTokens,
-      stream: true,
-      system: systemPrompt(),
-      messages: messages
-    })
+    body: JSON.stringify({ model: model, max_tokens: maxTokens, stream: true, system: systemPrompt(), messages: messages })
   }).then(function(res){
     if(!res.ok){
       return res.text().then(function(body){
         var msg = "API error " + res.status;
-        try{
-          var j = JSON.parse(body);
-          if(j.error && j.error.message) msg += ": " + j.error.message;
-        }catch(e){}
+        try{ var j = JSON.parse(body); if(j.error && j.error.message) msg += ": " + j.error.message; }catch(e){}
         if(res.status === 401) msg += " (check your API key in settings)";
         throw new Error(msg);
       });
     }
-    var reader = res.body.getReader();
-    var dec = new TextDecoder();
-    var buf = "", full = "";
+    var reader = res.body.getReader(), dec = new TextDecoder(), buf = "", full = "";
     function pump(){
       return reader.read().then(function(r){
         if(r.done) return full;
@@ -428,42 +664,30 @@ function callClaude(messages, maxTokens, onDelta){
 }
 
 function send(){
-  if(busy) return;
+  if(busy || state.view !== "chat") return;
   var input = el("input");
   var text = input.value.trim();
   if(!text) return;
-  input.value = "";
-  autosize();
+  input.value = ""; autosize();
   state.messages.push({ role: "user", content: text });
   addBubble("user", text);
   saveSession();
-  respond(1024);
-}
-
-function respond(maxTokens){
   busy = true;
   el("btnSend").disabled = true;
   el("thinking").style.display = "";
   scrollDown();
   var bubble = null;
-  callClaude(state.messages, maxTokens, function(sofar){
+  callClaude(state.messages, 1024, function(sofar){
     el("thinking").style.display = "none";
     if(!bubble) bubble = addBubble("assistant", sofar);
     else { bubble.innerHTML = md(sofar); scrollDown(); }
   }).then(function(full){
-    if(full){
-      state.messages.push({ role: "assistant", content: full });
-      saveSession();
-    }
+    if(full){ state.messages.push({ role: "assistant", content: full }); saveSession(); }
   }).catch(function(err){
     toast(err.message || "Something went wrong.");
-    // remove the user turn so it can be resent cleanly on failure before any reply arrived
     if(!bubble && state.messages.length && state.messages[state.messages.length-1].role === "user"){
-      // keep the text visible in chat; restore it to the input for retry
       var last = state.messages.pop();
-      el("input").value = last.content;
-      autosize();
-      saveSession();
+      el("input").value = last.content; autosize(); saveSession();
     }
   }).finally(function(){
     busy = false;
@@ -475,8 +699,8 @@ function respond(maxTokens){
 function generateArtifact(){
   if(busy || !state.mode) return;
   var ask = state.mode === "capture"
-    ? "Generate the final story file for this session now, following the capture schema exactly. Output pure markdown only, no preamble and no commentary."
-    : "Generate the final written review for this session now: Strengths, Gaps, Unresolved decisions, and Danger zones where relevant. Output pure markdown only, no preamble and no commentary.";
+    ? "Generate the final story file for this session now, following the capture schema exactly, starting with a single # title line. Output pure markdown only, no preamble and no commentary."
+    : "Generate the final written review for this session now: a single # title line, then Strengths, Gaps, Unresolved decisions, and Danger zones where relevant. Output pure markdown only, no preamble and no commentary.";
   busy = true;
   el("btnArtifact").disabled = true;
   el("thinking").style.display = "";
@@ -490,7 +714,10 @@ function generateArtifact(){
     box.textContent = sofar;
   }).then(function(full){
     box.textContent = full;
-    store("adviser_last_artifact", full);
+    var m = full.match(/^#\s+(.+)$/m);
+    var base = m ? m[1].trim() : (state.mode === "capture" ? "Captured story" : "Adviser review");
+    var prefix = state.mode === "capture" ? "Story - " : "Review - ";
+    el("artifactName").value = prefix + base.replace(/[\\/:*?"<>|]/g, "") + ".md";
   }).catch(function(err){
     el("artifactOverlay").classList.remove("open");
     toast(err.message || "Could not generate the artifact.");
@@ -501,15 +728,18 @@ function generateArtifact(){
   });
 }
 
-/* ---------- Settings ---------- */
+/* ================= Settings ================= */
 
 function openSettings(){
   el("apiKey").value = read("adviser_key") || "";
   el("modelId").value = read("adviser_model") || "claude-sonnet-4-5";
+  el("gClientId").value = read("adviser_gclient") || "";
+  el("folderId").value = read("adviser_folder") || DEFAULT_FOLDER;
+  el("driveStatus").textContent = driveReady() ? "Connected." : "Not connected.";
   el("settingsOverlay").classList.add("open");
 }
 
-/* ---------- Wiring ---------- */
+/* ================= Wiring ================= */
 
 function autosize(){
   var t = el("input");
@@ -520,63 +750,78 @@ function autosize(){
 document.addEventListener("DOMContentLoaded", function(){
   loadSession();
 
+  el("btnNewCapture").addEventListener("click", function(){ startMode("capture"); });
+  el("btnNewChallenge").addEventListener("click", function(){ startMode("challenge"); });
+  el("btnRefresh").addEventListener("click", refreshBank);
+  el("search").addEventListener("input", renderBank);
+
   var cards = document.querySelectorAll(".mode-card");
   for(var i=0;i<cards.length;i++){
     cards[i].addEventListener("click", function(){ startMode(this.getAttribute("data-mode")); });
   }
 
+  el("btnBank").addEventListener("click", function(){ show("bank"); renderBank(); });
   el("btnSend").addEventListener("click", send);
   el("input").addEventListener("keydown", function(e){
-    if(e.key === "Enter" && !e.shiftKey && !e.isComposing){
-      e.preventDefault(); send();
-    }
+    if(e.key === "Enter" && !e.shiftKey && !e.isComposing){ e.preventDefault(); send(); }
   });
   el("input").addEventListener("input", autosize);
 
-  el("btnNew").addEventListener("click", function(){
-    if(state.messages.length > 1 && !confirm("Start a new session? The current one is kept until you confirm, then cleared. Generate the artifact first if you want to keep this work.")) return;
-    showSetup();
-  });
   el("btnSettings").addEventListener("click", openSettings);
   el("btnSaveSettings").addEventListener("click", function(){
     var k = el("apiKey").value.trim();
-    var m = el("modelId").value.trim() || "claude-sonnet-4-5";
     if(k) store("adviser_key", k); else localStorage.removeItem("adviser_key");
-    store("adviser_model", m);
+    store("adviser_model", el("modelId").value.trim() || "claude-sonnet-4-5");
+    var oldCid = read("adviser_gclient") || "";
+    var newCid = el("gClientId").value.trim();
+    store("adviser_gclient", newCid);
+    if(newCid !== oldCid) tokenClient = null;
+    store("adviser_folder", el("folderId").value.trim() || DEFAULT_FOLDER);
     el("settingsOverlay").classList.remove("open");
-    renderKeyNote();
+    renderBank();
   });
-  el("btnArtifact").addEventListener("click", generateArtifact);
+  el("btnConnectDrive").addEventListener("click", connectDrive);
 
+  el("btnArtifact").addEventListener("click", generateArtifact);
   el("btnCopyArtifact").addEventListener("click", function(){
     var text = el("artifactText").textContent;
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(text).then(function(){ toast("Copied."); });
-    } else { toast("Copy not available in this browser; use Download."); }
+    if(navigator.clipboard) navigator.clipboard.writeText(text).then(function(){ toast("Copied.", true); });
   });
   el("btnDownloadArtifact").addEventListener("click", function(){
     var text = el("artifactText").textContent;
-    var d = new Date();
-    var stamp = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
-    var name = (state.mode === "capture" ? "Story - captured " : "Adviser review - ") + stamp + ".md";
+    var name = el("artifactName").value.trim() || "adviser-artifact.md";
     var blob = new Blob([text], { type: "text/markdown" });
     var a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = name;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(a.href);
+  });
+  el("btnSaveArtifact").addEventListener("click", function(){
+    var text = el("artifactText").textContent;
+    var name = el("artifactName").value.trim() || "adviser-artifact.md";
+    if(!text){ toast("Nothing to save yet."); return; }
+    el("btnSaveArtifact").disabled = true;
+    saveToBank(name, text).then(function(){
+      toast("Saved to the bank.", true);
+      el("artifactOverlay").classList.remove("open");
+      state.mode = null; state.messages = [];
+      saveSession();
+      show("bank");
+      refreshBank();
+    }).catch(function(e){
+      if(e.message !== "not connected") toast(e.message || "Save failed; use Download instead.");
+    }).finally(function(){ el("btnSaveArtifact").disabled = false; });
   });
 
   var closers = document.querySelectorAll("[data-close]");
   for(var j=0;j<closers.length;j++){
-    closers[j].addEventListener("click", function(){
-      this.closest(".overlay").classList.remove("open");
-    });
+    closers[j].addEventListener("click", function(){ this.closest(".overlay").classList.remove("open"); });
   }
 
-  if(state.mode && state.messages.length){ showChat(); } else { showSetup(); }
+  if(state.mode && state.messages.length){ renderChat(); show("chat"); }
+  else show("bank");
+  renderBank();
 });
 </script>
 </body>
