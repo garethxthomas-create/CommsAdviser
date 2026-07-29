@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The Adviser</title>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --bg:#f6f5f1; --panel:#ffffff; --ink:#1d2733; --ink-soft:#5b6773;
@@ -44,6 +44,7 @@
   button.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600}
   button.quiet{border:none; background:transparent; color:var(--ink-soft)}
   button.small{font-size:12.5px; padding:4px 9px}
+  button.danger{color:var(--danger); border-color:var(--danger)}
   button:disabled{opacity:.45; cursor:default}
 
   main{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch}
@@ -63,21 +64,37 @@
   }
   .chip.on{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
   .chip .x{margin-left:6px; font-weight:700}
+  .kind{
+    display:inline-block; font-size:11px; font-weight:700; letter-spacing:.4px;
+    text-transform:uppercase; padding:2px 8px; border-radius:6px;
+    background:var(--chip); color:var(--ink-soft); margin-right:8px;
+  }
   .story{
     width:100%; text-align:left; display:block; padding:14px 16px; margin-bottom:10px;
     border:1px solid var(--line); border-radius:var(--radius); background:var(--panel);
   }
   .story:hover{border-color:var(--accent)}
-  .story .t{font-weight:650; margin-bottom:3px}
+  .story .t{font-weight:650; margin-bottom:4px; display:flex; align-items:center}
   .story .m{font-size:12.5px; color:var(--ink-soft)}
+  .story .o{font-size:13.5px; color:var(--ink-soft); margin-top:4px}
   .empty{text-align:center; color:var(--ink-soft); padding:40px 10px; font-size:15px}
   .empty .big{font-size:17px; color:var(--ink); font-weight:600; margin-bottom:8px}
+  .authcard{
+    max-width:420px; margin:40px auto; background:var(--panel);
+    border:1px solid var(--line); border-radius:var(--radius); padding:24px; text-align:center;
+  }
+  .authcard h2{margin:0 0 8px; font-size:19px}
+  .authcard p{color:var(--ink-soft); font-size:14px; margin:0 0 16px}
+  .authcard input{
+    width:100%; font:inherit; padding:10px 12px; border-radius:10px;
+    border:1px solid var(--line); background:var(--bg); color:var(--ink); margin-bottom:10px;
+  }
 
   /* Setup */
   .setup h2{font-size:21px; margin:10px 0 6px}
   .setup p.lead{color:var(--ink-soft); margin:0 0 20px}
   .modes{display:grid; gap:14px; grid-template-columns:1fr}
-  @media(min-width:640px){.modes{grid-template-columns:1fr 1fr 1fr}}
+  @media(min-width:640px){.modes{grid-template-columns:1fr 1fr}}
   .mode-card{
     text-align:left; padding:18px; border-radius:var(--radius);
     border:1px solid var(--line); background:var(--panel);
@@ -126,7 +143,7 @@
   .overlay.open{display:flex}
   .modal{
     background:var(--panel); border-radius:16px; border:1px solid var(--line);
-    width:100%; max-width:680px; max-height:88vh; display:flex; flex-direction:column;
+    width:100%; max-width:720px; max-height:88vh; display:flex; flex-direction:column;
   }
   .modal .m-head{display:flex; align-items:center; padding:14px 18px; border-bottom:1px solid var(--line)}
   .modal .m-head h3{margin:0; font-size:16px; flex:1}
@@ -140,11 +157,22 @@
   }
   .hint{font-size:12.5px; color:var(--ink-soft); margin-top:5px}
   .divider{border-top:1px solid var(--line); margin:18px 0 14px}
-  #artifactText, #storyBody{
+  #artifactText{
+    white-space:pre-wrap; font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
     background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:14px;
   }
-  #artifactText{white-space:pre-wrap; font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-  #storyBody h1,#storyBody h2,#storyBody h3{line-height:1.3}
+  .entry-meta{color:var(--ink-soft); font-size:13.5px; margin:2px 0 10px}
+  .entry-lede{
+    font-size:15.5px; font-style:italic; color:var(--ink-soft);
+    border-left:3px solid var(--accent); padding-left:12px; margin:12px 0;
+  }
+  #entryBody{margin-top:14px}
+  #entryBody h2{
+    font-size:15px; letter-spacing:.3px; margin:22px 0 6px; padding-bottom:4px;
+    border-bottom:1px solid var(--line);
+  }
+  #entryBody h3{font-size:14.5px; margin:16px 0 4px}
+  #entryBody blockquote{margin:.5em 0; padding:2px 12px; border-left:3px solid var(--accent); color:var(--ink-soft)}
   .tagedit{display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:10px 0}
   .tagadd{display:flex; gap:6px; margin-top:8px}
   .tagadd input{flex:1; font:inherit; padding:7px 10px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--ink)}
@@ -175,19 +203,24 @@
 
     <!-- BANK (home) -->
     <div id="bankView">
-      <div class="bank-actions">
-        <button class="primary" id="btnNewCapture">+ Capture</button>
-        <button id="btnNewChallenge">Challenge</button>
-        <button id="btnNewPrep">Prep</button>
-        <button class="quiet" id="btnTags">Tags</button>
-        <button class="quiet" id="btnRefresh">Refresh</button>
+      <div id="authArea"></div>
+      <div id="bankInner" style="display:none">
+        <div class="bank-actions">
+          <button class="primary" id="btnNewCapture">+ Capture</button>
+          <button id="btnNewCodify">Codify</button>
+          <button id="btnNewChallenge">Challenge</button>
+          <button id="btnNewPrep">Prep</button>
+          <button class="quiet" id="btnTags">Tags</button>
+          <button class="quiet" id="btnExport">Export all</button>
+        </div>
+        <div class="bank-toolbar">
+          <input id="search" type="search" placeholder="Search titles, tags, content&hellip;">
+        </div>
+        <div class="tagrow" id="kindRow"></div>
+        <div class="tagrow" id="tagRow"></div>
+        <div id="storyList"></div>
+        <div class="empty" id="bankEmpty" style="display:none"></div>
       </div>
-      <div class="bank-toolbar">
-        <input id="search" type="search" placeholder="Search stories, tags, content&hellip;">
-      </div>
-      <div class="tagrow" id="tagRow"></div>
-      <div id="storyList"></div>
-      <div class="empty" id="bankEmpty" style="display:none"></div>
     </div>
 
     <!-- MODE PICK -->
@@ -197,15 +230,19 @@
       <div class="modes">
         <button class="mode-card" data-mode="capture">
           <div class="t">Capture</div>
-          <div class="d">The Adviser proposes what to capture next from your backlog and coverage gaps, then interviews you. Ends with a story file saved to the bank.</div>
+          <div class="d">The Adviser proposes what to capture next from your backlog and coverage gaps, then interviews you.</div>
+        </button>
+        <button class="mode-card" data-mode="codify">
+          <div class="t">Codify</div>
+          <div class="d">Turn your methods into doctrine: principles, playbooks, lessons, and decisions the Adviser will think with.</div>
         </button>
         <button class="mode-card" data-mode="challenge">
           <div class="t">Challenge</div>
-          <div class="d">Pressure-test live work: a brief, a plan, a draft, an answer. Ends with strengths, gaps, and unresolved decisions.</div>
+          <div class="d">Pressure-test live work: a brief, a plan, a draft, an answer.</div>
         </button>
         <button class="mode-card" data-mode="prep">
           <div class="t">Prep</div>
-          <div class="d">Paste a job description or describe the room. The Adviser maps your stories to it, fills the critical gaps, and writes the prep pack.</div>
+          <div class="d">Paste a job description or describe the room. The Adviser maps your stories to it and writes the prep pack.</div>
         </button>
       </div>
     </div>
@@ -229,9 +266,18 @@
     <div class="m-head"><h3>Settings</h3><button class="quiet" data-close>&#10005;</button></div>
     <div class="m-body">
       <div class="field">
+        <label for="sbUrl">Supabase project URL</label>
+        <input id="sbUrl" type="text" placeholder="https://xxxx.supabase.co">
+      </div>
+      <div class="field">
+        <label for="sbKey">Supabase anon key</label>
+        <input id="sbKey" type="password" autocomplete="off">
+        <div class="hint">Both are in your Supabase dashboard under Project Settings, API. Safe for browser use; row-level security protects the data.</div>
+      </div>
+      <div class="divider"></div>
+      <div class="field">
         <label for="apiKey">Anthropic API key</label>
         <input id="apiKey" type="password" placeholder="sk-ant-..." autocomplete="off">
-        <div class="hint">From console.anthropic.com. Stored only in this browser.</div>
       </div>
       <div class="field">
         <label for="modelId">Model</label>
@@ -240,16 +286,7 @@
       </div>
       <div class="divider"></div>
       <div class="field">
-        <label for="gClientId">Google OAuth Client ID</label>
-        <input id="gClientId" type="text" placeholder="1234567890-xxxx.apps.googleusercontent.com">
-      </div>
-      <div class="field">
-        <label for="folderId">Evidence Bank folder ID</label>
-        <input id="folderId" type="text">
-      </div>
-      <div class="field">
-        <button id="btnConnectDrive">Connect Google Drive</button>
-        <span class="hint" id="driveStatus" style="margin-left:8px"></span>
+        <button id="btnSignOut">Sign out</button>
       </div>
     </div>
     <div class="m-foot">
@@ -264,10 +301,6 @@
   <div class="modal">
     <div class="m-head"><h3 id="artifactTitle">Session artifact</h3><button class="quiet" data-close>&#10005;</button></div>
     <div class="m-body">
-      <div class="field">
-        <label for="artifactName">File name</label>
-        <input id="artifactName" type="text">
-      </div>
       <div id="artifactText"></div>
     </div>
     <div class="m-foot">
@@ -278,17 +311,19 @@
   </div>
 </div>
 
-<!-- STORY VIEWER -->
-<div class="overlay" id="storyOverlay">
+<!-- ENTRY VIEWER -->
+<div class="overlay" id="entryOverlay">
   <div class="modal">
-    <div class="m-head"><h3 id="storyTitle">Story</h3><button class="quiet" data-close>&#10005;</button></div>
+    <div class="m-head"><h3 id="entryTitle">Entry</h3><button class="quiet" data-close>&#10005;</button></div>
     <div class="m-body">
+      <div id="entryMeta" class="entry-meta"></div>
+      <div id="entryLede" class="entry-lede" style="display:none"></div>
       <div id="tagEditor"></div>
-      <div id="storyBody"></div>
+      <div id="entryBody"></div>
     </div>
     <div class="m-foot">
-      <button id="btnConvertStory" style="display:none">Convert to .md</button>
-      <button id="btnCopyStory">Copy markdown</button>
+      <button class="danger" id="btnDeleteEntry">Delete</button>
+      <button id="btnCopyEntry">Copy markdown</button>
       <button data-close class="primary">Close</button>
     </div>
   </div>
@@ -303,7 +338,7 @@
         <input id="newTagInput" type="text" placeholder="New tag&hellip;">
         <button id="btnAddTag">Add</button>
       </div>
-      <div class="hint" style="margin-bottom:10px">Rename changes the tag in every story that uses it. Retire removes it from the suggestion list only; stories keep it until you edit them.</div>
+      <div class="hint" style="margin-bottom:10px">Rename updates every entry that uses the tag. Retire removes it from suggestions; entries keep it until you edit them.</div>
       <div id="tagMgrList"></div>
     </div>
     <div class="m-foot">
@@ -317,7 +352,7 @@
 <script>
 "use strict";
 
-/* ================= The Adviser's brain (v3) ================= */
+/* ================= The Adviser's brain ================= */
 
 var BASE_PROMPT = [
 "You are The Adviser: a senior communications colleague for Gareth Thomas, a senior internal and executive communications professional with more than 20 years of experience (executive comms, change, AI-led communications transformation). You are not a writer. Your job is to improve the quality of his thinking and leave behind a written artifact. Never explain communications basics to him. Operate at the level of one communications director talking to another.",
@@ -325,7 +360,7 @@ var BASE_PROMPT = [
 "Method rules:",
 "1. Ask exactly ONE question per reply. Each question follows from his last answer. Never a list of questions.",
 "2. Adapt; do not march through a script. If an answer opens something important, follow it.",
-"3. Every reply must ADD something beyond the question: an observation, a reframe, a connection to something he said earlier or to a story already in his bank, or a piece of structure. A bare question is a wasted turn.",
+"3. Every reply must ADD something beyond the question: an observation, a reframe, a connection to something he said earlier or to an entry already in his bank, or a piece of structure. A bare question is a wasted turn.",
 "4. Data beats assertion, in both directions. Ask what evidence supports a claim; attach every number he offers.",
 "5. Distinguish the honest version of a story from the impressive version. The honest texture is almost always stronger, and lines optimized for one audience can be dangerous in front of another.",
 "",
@@ -346,15 +381,15 @@ var MODES = {
     dynamicOpen: true,
     bootstrap: "Begin the capture session. Look at my story backlog and my current tag coverage, and open by proposing what we should capture today: name your top recommendation and why, offer one or two alternatives in a single sentence, and let me choose or name something else entirely.",
     prompt: [
-"MODE: CAPTURE (backward-looking). You are interviewing Gareth about past work to produce a full-texture story file for his Career Evidence Bank.",
+"MODE: CAPTURE (backward-looking). You are interviewing Gareth about past work to produce a full-texture story entry for his Career Evidence Bank.",
 "",
-"OPENING INTELLIGENCE: The session begins with you proposing what to capture, using the STORY BACKLOG and TAG COVERAGE provided below. Recommend the highest-value uncaptured story (priority order in the backlog, weighted toward anything needed for live interview processes), briefly say why now, and offer alternatives in one sentence. If he picks something not on the backlog, good: capture it and note it as new.",
+"OPENING INTELLIGENCE: The session begins with you proposing what to capture, using the STORY BACKLOG and TAG COVERAGE provided below. Recommend the highest-value uncaptured story (priority 1 items first, weighted toward anything needed for live interview processes), briefly say why now, and offer alternatives in one sentence. If he picks something not on the backlog, good: capture it and note it as new.",
 "",
 "Once a story is chosen, ask him to tell it rough, the way he would tell a trusted colleague over coffee, mess and all. Then dig for what the polished version omits: the PEOPLE (who was afraid, who resisted, who decided, what happened to them; a story told entirely in systems and outcomes is missing its cast), the DECISIONS (the actual call, the options, who disagreed, why it landed where it did), the NUMBERS (reach, engagement, drop-off, budget, scale), the UNCOMFORTABLE BIT (what nearly went wrong, what he would do differently; if the story has no uncomfortable bit it has not been told yet), and the DANGER ZONES (how this story could be told badly to a hiring manager, a peer panel, or HR, and the safe telling for each).",
 "",
 "Capture is archaeology, not cross-examination. Dig persistently, but let him tell it.",
 "",
-"When asked to produce the final artifact, write a complete markdown story file with this schema: # Title; Status line (date captured, refinement pending); Organization, role, period; Competency tags (comma-separated; prefer tags from the taxonomy below, but coin a new one when the material genuinely needs it); One-line version; The full story (sections as the story demands); Evidence and numbers; Danger zones when telling this story; Interview cuts (a 30-second spoken cut and a 90-second spoken cut, plus targeted cuts for likely question types); Open items for next capture session."
+"When asked to produce the final artifact, write a complete markdown story entry with this structure exactly: line 1 is '# ' plus the title. Then a metadata block with one item per line: 'Organization: ...', 'Role: ...', 'Period: ...', 'Status: captured [today's date], refinement pending', 'Competency tags: tag1, tag2, ...' (prefer tags from the taxonomy below, coin new ones only when the material genuinely needs it), 'One-line: ...' (a single-sentence version of the story). Then the sections: The full story; Evidence and numbers; Danger zones when telling this story; Interview cuts (a 30-second spoken cut and a 90-second spoken cut, plus targeted cuts for likely question types); Open items for next capture session."
     ].join("\n")
   },
   challenge: {
@@ -363,39 +398,51 @@ var MODES = {
     prompt: [
 "MODE: CHALLENGE (forward-looking). Gareth brings live work: a brief, plan, draft strategy, stakeholder request, negotiation, or interview answer. Interrogate it progressively. Draw on questions like these as the conversation demands, never as a checklist: Who is this actually for, and what do they currently think, feel, or do? What should change, and is communication actually the solution? What happens if you say nothing? Who disagrees, who loses, which leader pushes back? What will the audience infer that was never intended? What are people afraid of, and does anything here answer that fear honestly? What is the evidence this will work, and would the proposed measures actually detect success?",
 "",
-"If the bank index below contains relevant prior stories or answers, connect them: remind him what he already knows.",
+"If the bank index below contains relevant prior entries, connect them: remind him what he already knows.",
 "",
-"When asked to produce the final artifact, write a markdown review starting with a single # title line, then: Strengths (what is solid and why), Gaps (what is missing or thin, stated bluntly), Unresolved decisions (choices that must be made, and by whom, before this ships), and where relevant Danger zones (specific phrasings or framings that would hurt in the intended room, each with a safe translation)."
+"When asked to produce the final artifact, write a markdown review: line 1 is '# ' plus a title for the topic, then a 'One-line: ...' verdict line, then sections: Strengths (what is solid and why), Gaps (what is missing or thin, stated bluntly), Unresolved decisions (choices that must be made, and by whom, before this ships), and where relevant Danger zones (specific phrasings or framings that would hurt in the intended room, each with a safe translation)."
+    ].join("\n")
+  },
+  codify: {
+    label: "Codify",
+    dynamicOpen: true,
+    bootstrap: "Begin the codify session. Look at my knowledge backlog and the doctrine already in the bank, and open by proposing what we should codify today: name your top recommendation and why, offer one or two alternatives in a single sentence, and let me choose or name something else, including logging a recent decision.",
+    prompt: [
+"MODE: CODIFY. You are extracting Gareth's professional doctrine: the methods, principles, lessons, and judgment calls that live in his head, so the Adviser can think with them in future sessions. This is the professional-brain layer: not what happened (that is Capture), but how he works and why.",
+"",
+"OPENING INTELLIGENCE: Begin by proposing what to codify, using the KNOWLEDGE BACKLOG and the EXISTING DOCTRINE list below. Recommend the highest-value uncodified item and say why; offer alternatives in one sentence. He may also log a DECISION (a significant judgment call from live work: situation, options, the call, why, outcome when known).",
+"",
+"Interview approach: get the method out of him as he would explain it to a trusted peer taking over his job. Dig for: the STEPS he actually follows (not the idealized version), the WHY behind each (what failure taught it), the SIGNALS he watches for (what tells him it is working or going wrong), the EXCEPTIONS (when he breaks his own rule), and a WORKED EXAMPLE from his career with names, numbers, and outcome. Doctrine without an example is a fortune cookie; push for the example.",
+"",
+"When asked to produce the final artifact, choose the right kind and write a complete markdown entry: line 1 is '# ' plus the title. Then a metadata block, one item per line: 'Kind: principle' (or playbook, lesson, or decision), 'Period: ...' (when this applies or was learned), 'Status: codified [today's date]', 'Competency tags: ...', 'One-line: ...'. Then sections appropriate to the kind: for a PRINCIPLE: The principle; How I apply it; Signals it is being violated; Exceptions; Where it comes from. For a PLAYBOOK: When to use; The method; Watch-outs; Worked example. For a LESSON: What happened; What it taught; How it changed how I work. For a DECISION: Situation; Options considered; The decision; Why; Evidence used; Outcome; What I would do differently."
     ].join("\n")
   },
   prep: {
     label: "Prep",
     intro: "Prep mode. Paste the job description, or describe the room: who you are facing, what round it is, and what is at stake.",
     prompt: [
-"MODE: PREP. Gareth is preparing for a specific room: an interview round, a panel, a high-stakes meeting, or a negotiation. His FULL STORY FILES are provided below; you know his material better than he remembers it.",
+"MODE: PREP. Gareth is preparing for a specific room: an interview round, a panel, a high-stakes meeting, or a negotiation. His FULL BANK ENTRIES are provided below; you know his material better than he remembers it.",
 "",
-"Process: First, read what he pastes (job description, panel names and roles, round details). Second, give a short read of the room: what this round is really testing, and each known participant's likely unspoken question. Third, map his existing stories and answers to the likely questions, naming files explicitly. Fourth, identify the two or three critical gaps, material this room needs that the bank does not hold or that is unexercised, and interview him briefly to fill them, one question at a time. Fifth, when asked for the artifact, write the complete prep pack.",
+"Process: First, read what he pastes (job description, panel names and roles, round details). Second, give a short read of the room: what this round is really testing, and each known participant's likely unspoken question. Third, map his existing entries to the likely questions, naming entries explicitly. Fourth, identify the two or three critical gaps, material this room needs that the bank does not hold or that is unexercised, and interview him briefly to fill them, one question at a time. Fifth, when asked for the artifact, write the complete prep pack.",
 "",
-"When asked to produce the final artifact, write a markdown prep pack starting with a single # title line, modeled on the structure that has worked before: What this round actually is; The room, decoded (per person: role, likely unspoken question, how to win them, based only on information he has provided); Your stories, cut for this audience (with the spoken framing and which bank file each comes from); Likely questions with answer shapes; Danger zones (never-say lines with safe translations); Questions to ask them; Logistics and final reminders."
+"When asked to produce the final artifact, write a markdown prep pack: line 1 is '# ' plus a title naming the round, then a 'One-line: ...' summary, then sections modeled on what has worked before: What this round actually is; The room, decoded (per person: role, likely unspoken question, how to win them, based only on information he has provided); Your stories, cut for this audience (with the spoken framing and which bank entry each comes from); Likely questions with answer shapes; Danger zones (never-say lines with safe translations); Questions to ask them; Logistics and final reminders."
     ].join("\n")
   }
 };
-
-var DEFAULT_FOLDER = "1vZhiPTU7jRjg7CN8T0UA2AmTn5kL1uRB";
-var TAXONOMY_NAME = "_Taxonomy.md";
-var BACKLOG_NAME = "_Story backlog.md";
 
 /* ================= State ================= */
 
 var state = { view: "bank", mode: null, messages: [] };
 var busy = false;
-var stories = [];       // visible story files
-var configFiles = {};   // name -> {id, name, mimeType, content}
-var taxonomy = [];      // canonical tags
+var db = null;             // supabase client
+var sessionUser = null;
+var entries = [], tagList = [], backlog = [];
 var activeTags = {};
-var currentStory = null;
-var editTags = null;    // working tag list in story viewer
-var gToken = null, gTokenExp = 0, tokenClient = null;
+var KNOWLEDGE_KINDS = ["principle","playbook","lesson","decision"];
+var kindFilter = "all";    // all | stories | knowledge
+function isKnowledge(s){ return KNOWLEDGE_KINDS.indexOf(s.kind) !== -1; }
+var currentEntry = null;
+var editTags = null;
 
 function store(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
 function read(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
@@ -414,7 +461,7 @@ function loadSession(){
 /* ================= Tiny markdown ================= */
 
 function el(id){ return document.getElementById(id); }
-function esc(t){ return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function esc(t){ return String(t||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 function inline(t){
   return t
     .replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")
@@ -450,42 +497,312 @@ function toast(msg, ok){
   t._h = setTimeout(function(){ t.style.display = "none"; }, 4500);
 }
 
-/* ================= Tags ================= */
+/* ================= Supabase ================= */
 
-function parseTags(content){
-  var m = content.match(/Competency tags[:\*\s]*([^\n]+)/i);
-  if(!m) return [];
-  return m[1].replace(/\*\*/g,"").split(",").map(function(s){ return s.trim(); }).filter(function(s){ return s && s.length < 40; });
-}
-function setTagsInContent(content, tags){
-  var line = tags.join(", ");
-  if(/Competency tags/i.test(content)){
-    return content.replace(/(Competency tags[:\*]*\s*)([^\n]+)/i, function(_, pre){ return pre + line; });
+function initDb(){
+  var url = read("adviser_sburl"), key = read("adviser_sbkey");
+  if(!url || !key) return false;
+  if(!(window.supabase && window.supabase.createClient)){
+    toast("Database library did not load; check your connection and refresh.");
+    return false;
   }
-  var lines = content.split("\n");
-  lines.splice(1, 0, "", "**Competency tags:** " + line);
-  return lines.join("\n");
+  if(!db){
+    db = window.supabase.createClient(url, key);
+    db.auth.onAuthStateChange(function(_evt, session){
+      sessionUser = session ? session.user : null;
+      renderAuth();
+      if(sessionUser) loadAll();
+    });
+  }
+  return true;
 }
-function parseTaxonomy(content){
-  return content.split("\n").map(function(ln){
-    var m = ln.match(/^\s*-\s+(.+)$/);
-    return m ? m[1].trim() : null;
-  }).filter(Boolean);
+
+function renderAuth(){
+  var area = el("authArea");
+  var inner = el("bankInner");
+  if(!read("adviser_sburl") || !read("adviser_sbkey")){
+    inner.style.display = "none";
+    area.innerHTML = "<div class='authcard'><h2>One-time setup</h2><p>Add your Supabase URL and anon key in settings (gear icon), then sign in. SETUP.md has the walkthrough.</p><button class='primary' id='btnOpenSettings'>Open settings</button></div>";
+    var b = el("btnOpenSettings");
+    if(b) b.addEventListener("click", openSettings);
+    return;
+  }
+  if(!sessionUser){
+    inner.style.display = "none";
+    area.innerHTML = "<div class='authcard'><h2>Sign in</h2><p>A sign-in link will be emailed to you. One click, and this device stays signed in.</p>" +
+      "<input id='loginEmail' type='email' placeholder='you@example.com' value='" + esc(read("adviser_email") || "") + "'>" +
+      "<button class='primary' id='btnLogin'>Email me a sign-in link</button><p id='loginMsg' style='margin-top:10px'></p></div>";
+    var lb = el("btnLogin");
+    if(lb) lb.addEventListener("click", function(){
+      var email = el("loginEmail").value.trim();
+      if(!email){ toast("Enter your email."); return; }
+      store("adviser_email", email);
+      lb.disabled = true;
+      db.auth.signInWithOtp({ email: email, options: { emailRedirectTo: window.location.origin + window.location.pathname } })
+        .then(function(r){
+          if(r.error){ toast(r.error.message); lb.disabled = false; }
+          else { el("loginMsg").textContent = "Link sent. Open it on this device."; }
+        });
+    });
+    return;
+  }
+  area.innerHTML = "";
+  inner.style.display = "";
 }
-function taxonomyContent(tags){
-  return "# Tag taxonomy\n\nCanonical competency tags for the Career Evidence Bank. The Adviser app reads this list for tag suggestions and coverage analysis. Edit freely: one tag per line, dash prefix.\n\n" +
-    tags.map(function(t){ return "- " + t; }).join("\n") + "\n";
+
+function loadAll(){
+  if(!db || !sessionUser) return Promise.resolve();
+  return Promise.all([
+    db.from("entries").select("*").order("updated_at", { ascending: false }),
+    db.from("tags").select("*").order("name"),
+    db.from("backlog_items").select("*").order("priority").order("title")
+  ]).then(function(res){
+    if(res[0].error || res[1].error || res[2].error){
+      var e = res[0].error || res[1].error || res[2].error;
+      toast("Database error: " + e.message);
+      return;
+    }
+    entries = res[0].data || [];
+    tagList = (res[1].data || []).map(function(r){ return r.name; });
+    backlog = res[2].data || [];
+    renderBank();
+  });
 }
+
+/* ================= Bank rendering ================= */
+
 function unionTags(){
   var seen = {}, out = [];
-  taxonomy.forEach(function(t){ if(!seen[t]){ seen[t]=1; out.push(t); } });
-  stories.forEach(function(s){ (s.tags||[]).forEach(function(t){ if(!seen[t]){ seen[t]=1; out.push(t); } }); });
+  tagList.forEach(function(t){ if(!seen[t]){ seen[t]=1; out.push(t); } });
+  entries.forEach(function(s){ (s.tags||[]).forEach(function(t){ if(!seen[t]){ seen[t]=1; out.push(t); } }); });
   return out;
 }
 function tagCount(tag){
   var n = 0;
-  stories.forEach(function(s){ if((s.tags||[]).indexOf(tag) !== -1) n++; });
+  entries.forEach(function(s){ if((s.tags||[]).indexOf(tag) !== -1) n++; });
   return n;
+}
+
+function renderBank(){
+  if(!sessionUser) return;
+  var q = (el("search").value || "").toLowerCase();
+  var tagsOn = Object.keys(activeTags).filter(function(k){ return activeTags[k]; });
+  var list = el("storyList");
+  list.innerHTML = "";
+
+  var kr = el("kindRow");
+  kr.innerHTML = "";
+  [["all","All"],["stories","Stories & evidence"],["knowledge","Doctrine"]].forEach(function(pair){
+    var c = document.createElement("span");
+    c.className = "chip" + (kindFilter === pair[0] ? " on" : "");
+    c.textContent = pair[1];
+    c.addEventListener("click", function(){ kindFilter = pair[0]; renderBank(); });
+    kr.appendChild(c);
+  });
+
+  var tr = el("tagRow");
+  tr.innerHTML = "";
+  unionTags().forEach(function(t){
+    if(tagCount(t) === 0 && !activeTags[t]) return;
+    var c = document.createElement("span");
+    c.className = "chip" + (activeTags[t] ? " on" : "");
+    c.textContent = t;
+    c.addEventListener("click", function(){ activeTags[t] = !activeTags[t]; renderBank(); });
+    tr.appendChild(c);
+  });
+
+  var shown = 0;
+  entries.forEach(function(s){
+    if(kindFilter === "stories" && isKnowledge(s)) return;
+    if(kindFilter === "knowledge" && !isKnowledge(s)) return;
+    var hay = (s.title + " " + (s.one_line||"") + " " + (s.tags||[]).join(" ") + " " + (s.body||"")).toLowerCase();
+    if(q && hay.indexOf(q) === -1) return;
+    for(var i=0;i<tagsOn.length;i++){ if((s.tags||[]).indexOf(tagsOn[i]) === -1) return; }
+    shown++;
+    var b = document.createElement("button");
+    b.className = "story";
+    var d = s.updated_at ? new Date(s.updated_at).toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}) : "";
+    var metaBits = [];
+    if(s.organization) metaBits.push(s.organization);
+    if(s.period) metaBits.push(s.period);
+    metaBits.push(d);
+    b.innerHTML =
+      "<div class='t'><span class='kind'>" + esc(s.kind) + "</span>" + esc(s.title) + "</div>" +
+      (s.one_line ? "<div class='o'>" + esc(s.one_line) + "</div>" : "") +
+      "<div class='m'>" + esc(metaBits.join(" · ")) + ((s.tags && s.tags.length) ? " · " + esc(s.tags.slice(0,4).join(", ")) : "") + "</div>";
+    b.addEventListener("click", function(){ openEntry(s); });
+    list.appendChild(b);
+  });
+
+  var empty = el("bankEmpty");
+  if(!shown){
+    empty.style.display = "";
+    empty.innerHTML = entries.length ? "Nothing matches that search." : "<div class='big'>The bank is empty</div>Capture your first story and it will appear here.";
+  } else {
+    empty.style.display = "none";
+  }
+}
+
+/* ================= Entry viewer ================= */
+
+function openEntry(s){
+  currentEntry = s;
+  editTags = (s.tags || []).slice();
+  el("entryTitle").textContent = s.title;
+  var bits = [];
+  if(s.kind) bits.push(s.kind.toUpperCase());
+  if(s.organization) bits.push(s.organization);
+  if(s.role) bits.push(s.role);
+  if(s.period) bits.push(s.period);
+  el("entryMeta").textContent = bits.join(" · ") + (s.status ? "  —  " + s.status : "");
+  var lede = el("entryLede");
+  if(s.one_line){ lede.textContent = s.one_line; lede.style.display = ""; }
+  else lede.style.display = "none";
+  el("entryBody").innerHTML = md(s.body || "");
+  renderTagEditor();
+  el("entryOverlay").classList.add("open");
+  el("btnCopyEntry").onclick = function(){
+    if(navigator.clipboard) navigator.clipboard.writeText(entryMarkdown(s)).then(function(){ toast("Copied.", true); });
+  };
+  el("btnDeleteEntry").onclick = function(){
+    if(!confirm("Delete '" + s.title + "' from the bank? This cannot be undone.")) return;
+    db.from("entries").delete().eq("id", s.id).then(function(r){
+      if(r.error){ toast(r.error.message); return; }
+      toast("Deleted.", true);
+      el("entryOverlay").classList.remove("open");
+      loadAll();
+    });
+  };
+}
+
+function entryMarkdown(s){
+  var head = "# " + s.title + "\n\n" +
+    (s.organization ? "Organization: " + s.organization + "\n" : "") +
+    (s.role ? "Role: " + s.role + "\n" : "") +
+    (s.period ? "Period: " + s.period + "\n" : "") +
+    (s.status ? "Status: " + s.status + "\n" : "") +
+    ((s.tags && s.tags.length) ? "Competency tags: " + s.tags.join(", ") + "\n" : "") +
+    (s.one_line ? "One-line: " + s.one_line + "\n" : "");
+  return head + "\n" + (s.body || "");
+}
+
+function renderTagEditor(){
+  var host = el("tagEditor");
+  host.innerHTML = "";
+  var row = document.createElement("div");
+  row.className = "tagedit";
+  editTags.forEach(function(t, idx){
+    var c = document.createElement("span");
+    c.className = "chip on";
+    c.innerHTML = esc(t) + "<span class='x'>&times;</span>";
+    c.addEventListener("click", function(){ editTags.splice(idx,1); renderTagEditor(); });
+    row.appendChild(c);
+  });
+  host.appendChild(row);
+
+  var add = document.createElement("div");
+  add.className = "tagadd";
+  var inp = document.createElement("input");
+  inp.setAttribute("list", "tagSuggestions");
+  inp.placeholder = "Add a tag…";
+  var dl = document.createElement("datalist");
+  dl.id = "tagSuggestions";
+  unionTags().forEach(function(t){
+    if(editTags.indexOf(t) !== -1) return;
+    var o = document.createElement("option");
+    o.value = t;
+    dl.appendChild(o);
+  });
+  var btnA = document.createElement("button");
+  btnA.textContent = "Add";
+  btnA.addEventListener("click", function(){
+    var v = inp.value.trim();
+    if(v && editTags.indexOf(v) === -1){ editTags.push(v); inp.value=""; renderTagEditor(); }
+  });
+  var btnS = document.createElement("button");
+  btnS.className = "primary";
+  btnS.textContent = "Save tags";
+  btnS.addEventListener("click", function(){
+    db.from("entries").update({ tags: editTags, updated_at: new Date().toISOString() }).eq("id", currentEntry.id).then(function(r){
+      if(r.error){ toast(r.error.message); return; }
+      currentEntry.tags = editTags.slice();
+      toast("Tags saved.", true);
+      loadAll();
+    });
+  });
+  add.appendChild(inp); add.appendChild(dl); add.appendChild(btnA); add.appendChild(btnS);
+  host.appendChild(add);
+}
+
+/* ================= Tag manager ================= */
+
+function openTagManager(){ renderTagManager(); el("tagsOverlay").classList.add("open"); }
+function renderTagManager(){
+  var host = el("tagMgrList");
+  host.innerHTML = "";
+  unionTags().forEach(function(t){
+    var row = document.createElement("div");
+    row.className = "tagmgr-row";
+    var n = document.createElement("span"); n.className = "n"; n.textContent = t;
+    var c = document.createElement("span"); c.className = "c"; c.textContent = tagCount(t) + " in use";
+    var bR = document.createElement("button"); bR.className = "small"; bR.textContent = "Rename";
+    bR.addEventListener("click", function(){ renameTag(t); });
+    var bD = document.createElement("button"); bD.className = "small"; bD.textContent = "Retire";
+    bD.addEventListener("click", function(){ retireTag(t); });
+    row.appendChild(n); row.appendChild(c); row.appendChild(bR); row.appendChild(bD);
+    host.appendChild(row);
+  });
+}
+function addTag(){
+  var v = el("newTagInput").value.trim();
+  if(!v) return;
+  db.from("tags").insert({ name: v }).then(function(r){
+    if(r.error){ toast(r.error.code === "23505" ? "Already exists." : r.error.message); return; }
+    el("newTagInput").value = "";
+    toast("Added.", true);
+    loadAll().then(renderTagManager);
+  });
+}
+function renameTag(oldTag){
+  var newTag = prompt("Rename '" + oldTag + "' to:", oldTag);
+  if(!newTag || newTag.trim() === "" || newTag.trim() === oldTag) return;
+  newTag = newTag.trim();
+  var affected = entries.filter(function(s){ return (s.tags||[]).indexOf(oldTag) !== -1; });
+  var updates = affected.map(function(s){
+    var newTags = s.tags.map(function(t){ return t === oldTag ? newTag : t; });
+    return db.from("entries").update({ tags: newTags }).eq("id", s.id);
+  });
+  Promise.all(updates).then(function(){
+    return db.from("tags").delete().eq("name", oldTag);
+  }).then(function(){
+    return db.from("tags").insert({ name: newTag });
+  }).then(function(){
+    toast("Renamed in " + affected.length + " entr" + (affected.length === 1 ? "y" : "ies") + ".", true);
+    loadAll().then(renderTagManager);
+  }).catch(function(e){ toast(e.message || "Rename failed part way; refresh."); });
+}
+function retireTag(tag){
+  if(tagList.indexOf(tag) === -1){ toast("That tag only exists on entries; edit those entries to remove it."); return; }
+  db.from("tags").delete().eq("name", tag).then(function(r){
+    if(r.error){ toast(r.error.message); return; }
+    toast("Retired from suggestions.", true);
+    loadAll().then(renderTagManager);
+  });
+}
+
+/* ================= Export ================= */
+
+function exportAll(){
+  if(!entries.length){ toast("Nothing to export yet."); return; }
+  var parts = ["# Career Evidence Bank export\n\nExported " + new Date().toISOString().slice(0,10) + ". " + entries.length + " entries.\n"];
+  entries.forEach(function(s){ parts.push("\n\n---\n\n" + entryMarkdown(s)); });
+  var blob = new Blob([parts.join("")], { type: "text/markdown" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "career-evidence-bank-" + new Date().toISOString().slice(0,10) + ".md";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  toast("Exported. Keep a copy somewhere you own.", true);
 }
 
 /* ================= Views ================= */
@@ -541,355 +858,43 @@ function startMode(mode){
   el("input").focus();
 }
 
-/* ================= Bank rendering ================= */
-
-function renderBank(){
-  var q = (el("search").value || "").toLowerCase();
-  var tagsOn = Object.keys(activeTags).filter(function(k){ return activeTags[k]; });
-  var list = el("storyList");
-  list.innerHTML = "";
-
-  var tr = el("tagRow");
-  tr.innerHTML = "";
-  unionTags().forEach(function(t){
-    if(tagCount(t) === 0 && !activeTags[t]) return;
-    var c = document.createElement("span");
-    c.className = "chip" + (activeTags[t] ? " on" : "");
-    c.textContent = t;
-    c.addEventListener("click", function(){ activeTags[t] = !activeTags[t]; renderBank(); });
-    tr.appendChild(c);
-  });
-
-  var shown = 0;
-  stories.forEach(function(s){
-    var hay = (s.name + " " + (s.content||"")).toLowerCase();
-    if(q && hay.indexOf(q) === -1) return;
-    for(var i=0;i<tagsOn.length;i++){ if((s.tags||[]).indexOf(tagsOn[i]) === -1) return; }
-    shown++;
-    var b = document.createElement("button");
-    b.className = "story";
-    var d = s.modifiedTime ? new Date(s.modifiedTime).toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}) : "";
-    b.innerHTML = "<div class='t'>" + esc(s.name.replace(/\.md$/,"")) + "</div>" +
-                  "<div class='m'>" + esc(d) + (s.tags && s.tags.length ? " &middot; " + esc(s.tags.slice(0,4).join(", ")) : "") +
-                  (s.mimeType === "application/vnd.google-apps.document" ? " &middot; Google Doc" : "") + "</div>";
-    b.addEventListener("click", function(){ openStory(s); });
-    list.appendChild(b);
-  });
-
-  var empty = el("bankEmpty");
-  if(!gToken && !stories.length){
-    empty.style.display = "";
-    empty.innerHTML = read("adviser_gclient")
-      ? "<div class='big'>Connect Google Drive</div>Your evidence bank lives in Drive. <br><br><button class='primary' id='btnConnectInline'>Connect Drive</button>"
-      : "<div class='big'>One-time setup needed</div>Add your Google Client ID in settings (gear icon), then connect Drive. SETUP.md has the walkthrough.";
-    var ib = el("btnConnectInline");
-    if(ib) ib.addEventListener("click", connectDrive);
-  } else if(!shown){
-    empty.style.display = "";
-    empty.innerHTML = stories.length ? "Nothing matches that search." : "<div class='big'>The bank is empty</div>Capture your first story and it will appear here.";
-  } else {
-    empty.style.display = "none";
-  }
-}
-
-/* ================= Story viewer + tag editing ================= */
-
-function openStory(s){
-  currentStory = s;
-  editTags = (s.tags || []).slice();
-  el("storyTitle").textContent = s.name.replace(/\.md$/,"");
-  el("storyBody").innerHTML = md(s.content || "(no content loaded; refresh the bank)");
-  var isDoc = s.mimeType === "application/vnd.google-apps.document";
-  el("btnConvertStory").style.display = isDoc ? "" : "none";
-  renderTagEditor(isDoc);
-  el("storyOverlay").classList.add("open");
-  el("btnCopyStory").onclick = function(){
-    if(navigator.clipboard) navigator.clipboard.writeText(s.content || "").then(function(){ toast("Copied.", true); });
-  };
-  el("btnConvertStory").onclick = function(){ convertToMd(s); };
-}
-
-function renderTagEditor(isDoc){
-  var host = el("tagEditor");
-  host.innerHTML = "";
-  var row = document.createElement("div");
-  row.className = "tagedit";
-  editTags.forEach(function(t, idx){
-    var c = document.createElement("span");
-    c.className = "chip on";
-    c.innerHTML = esc(t) + "<span class='x'>&times;</span>";
-    c.addEventListener("click", function(){ editTags.splice(idx,1); renderTagEditor(isDoc); });
-    row.appendChild(c);
-  });
-  host.appendChild(row);
-
-  if(isDoc){
-    var note = document.createElement("div");
-    note.className = "hint";
-    note.textContent = "This entry is a Google Doc, which the app can read but not edit. Convert it to .md (button below) to edit tags here.";
-    host.appendChild(note);
-    return;
-  }
-
-  var add = document.createElement("div");
-  add.className = "tagadd";
-  var inp = document.createElement("input");
-  inp.setAttribute("list", "tagSuggestions");
-  inp.placeholder = "Add a tag…";
-  var dl = document.createElement("datalist");
-  dl.id = "tagSuggestions";
-  unionTags().forEach(function(t){
-    if(editTags.indexOf(t) !== -1) return;
-    var o = document.createElement("option");
-    o.value = t;
-    dl.appendChild(o);
-  });
-  var btnA = document.createElement("button");
-  btnA.textContent = "Add";
-  btnA.addEventListener("click", function(){
-    var v = inp.value.trim();
-    if(v && editTags.indexOf(v) === -1){ editTags.push(v); inp.value=""; renderTagEditor(isDoc); }
-  });
-  var btnS = document.createElement("button");
-  btnS.className = "primary";
-  btnS.textContent = "Save tags";
-  btnS.addEventListener("click", saveStoryTags);
-  add.appendChild(inp); add.appendChild(dl); add.appendChild(btnA); add.appendChild(btnS);
-  host.appendChild(add);
-}
-
-function saveStoryTags(){
-  if(!currentStory) return;
-  var newContent = setTagsInContent(currentStory.content, editTags);
-  updateFile(currentStory.id, newContent).then(function(){
-    currentStory.content = newContent;
-    currentStory.tags = editTags.slice();
-    toast("Tags saved.", true);
-    renderBank();
-    el("storyOverlay").classList.remove("open");
-  }).catch(function(e){ toast(e.message || "Could not save tags."); });
-}
-
-function convertToMd(s){
-  var name = s.name.replace(/\.md$/,"") + ".md";
-  el("btnConvertStory").disabled = true;
-  saveToBank(name, s.content).then(function(){
-    return trashFile(s.id);
-  }).then(function(){
-    toast("Converted to .md.", true);
-    el("storyOverlay").classList.remove("open");
-    refreshBank();
-  }).catch(function(e){
-    toast(e.message || "Conversion failed.");
-  }).finally(function(){ el("btnConvertStory").disabled = false; });
-}
-
-/* ================= Tag manager ================= */
-
-function openTagManager(){
-  renderTagManager();
-  el("tagsOverlay").classList.add("open");
-}
-function renderTagManager(){
-  var host = el("tagMgrList");
-  host.innerHTML = "";
-  unionTags().forEach(function(t){
-    var row = document.createElement("div");
-    row.className = "tagmgr-row";
-    var n = document.createElement("span"); n.className = "n"; n.textContent = t;
-    var c = document.createElement("span"); c.className = "c"; c.textContent = tagCount(t) + " in use";
-    var bR = document.createElement("button"); bR.className = "small"; bR.textContent = "Rename";
-    bR.addEventListener("click", function(){ renameTag(t); });
-    var bD = document.createElement("button"); bD.className = "small"; bD.textContent = "Retire";
-    bD.addEventListener("click", function(){ retireTag(t); });
-    row.appendChild(n); row.appendChild(c); row.appendChild(bR); row.appendChild(bD);
-    host.appendChild(row);
-  });
-}
-function persistTaxonomy(){
-  var content = taxonomyContent(taxonomy);
-  var f = configFiles[TAXONOMY_NAME];
-  var p = f && f.mimeType !== "application/vnd.google-apps.document"
-    ? updateFile(f.id, content)
-    : saveToBank(TAXONOMY_NAME, content);
-  return p.then(function(){ if(f) f.content = content; });
-}
-function addTag(){
-  var v = el("newTagInput").value.trim();
-  if(!v) return;
-  if(taxonomy.indexOf(v) !== -1){ toast("Already exists."); return; }
-  taxonomy.push(v);
-  taxonomy.sort();
-  el("newTagInput").value = "";
-  persistTaxonomy().then(function(){ toast("Added.", true); renderTagManager(); renderBank(); })
-    .catch(function(e){ toast(e.message || "Could not save taxonomy."); });
-}
-function renameTag(oldTag){
-  var newTag = prompt("Rename '" + oldTag + "' to:", oldTag);
-  if(!newTag || newTag.trim() === "" || newTag.trim() === oldTag) return;
-  newTag = newTag.trim();
-  var ti = taxonomy.indexOf(oldTag);
-  if(ti !== -1) taxonomy[ti] = newTag; else taxonomy.push(newTag);
-  var affected = stories.filter(function(s){ return (s.tags||[]).indexOf(oldTag) !== -1; });
-  var docsSkipped = 0;
-  var updates = affected.map(function(s){
-    if(s.mimeType === "application/vnd.google-apps.document"){ docsSkipped++; return Promise.resolve(); }
-    var newTags = s.tags.map(function(t){ return t === oldTag ? newTag : t; });
-    var newContent = setTagsInContent(s.content, newTags);
-    return updateFile(s.id, newContent).then(function(){ s.content = newContent; s.tags = newTags; });
-  });
-  Promise.all(updates).then(persistTaxonomy).then(function(){
-    toast("Renamed in " + (affected.length - docsSkipped) + " file(s)." + (docsSkipped ? " " + docsSkipped + " Google Doc(s) skipped; convert them to .md first." : ""), true);
-    renderTagManager(); renderBank();
-  }).catch(function(e){ toast(e.message || "Rename failed part way; hit Refresh."); });
-}
-function retireTag(tag){
-  var i = taxonomy.indexOf(tag);
-  if(i === -1){ toast("That tag only exists inside story files; edit those stories to remove it."); return; }
-  taxonomy.splice(i,1);
-  persistTaxonomy().then(function(){ toast("Retired from suggestions.", true); renderTagManager(); renderBank(); })
-    .catch(function(e){ toast(e.message || "Could not save taxonomy."); });
-}
-
-/* ================= Google Drive ================= */
-
-function driveReady(){ return gToken && Date.now() < gTokenExp - 60000; }
-
-function connectDrive(){
-  var cid = read("adviser_gclient");
-  if(!cid){ openSettings(); toast("Add your Google Client ID first (see SETUP.md)."); return; }
-  if(!(window.google && google.accounts && google.accounts.oauth2)){
-    toast("Google sign-in library still loading; try again in a second.");
-    return;
-  }
-  if(!tokenClient){
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: cid,
-      scope: "https://www.googleapis.com/auth/drive",
-      callback: function(resp){
-        if(resp && resp.access_token){
-          gToken = resp.access_token;
-          gTokenExp = Date.now() + (resp.expires_in ? resp.expires_in * 1000 : 3500000);
-          el("driveStatus").textContent = "Connected.";
-          toast("Drive connected.", true);
-          refreshBank();
-        } else if(resp && resp.error){
-          toast("Google auth: " + resp.error);
-        }
-      }
-    });
-  }
-  tokenClient.requestAccessToken({ prompt: gToken ? "" : "consent" });
-}
-
-function driveFetch(url, opts){
-  opts = opts || {};
-  opts.headers = opts.headers || {};
-  opts.headers["Authorization"] = "Bearer " + gToken;
-  return fetch(url, opts).then(function(r){
-    if(r.status === 401){ gToken = null; renderBank(); throw new Error("Drive session expired; hit Refresh to reconnect."); }
-    if(!r.ok) return r.text().then(function(){ throw new Error("Drive error " + r.status); });
-    return r;
-  });
-}
-
-function refreshBank(){
-  if(!driveReady()){ connectDrive(); return; }
-  var folder = read("adviser_folder") || DEFAULT_FOLDER;
-  var q = encodeURIComponent("'" + folder + "' in parents and trashed = false");
-  el("btnRefresh").disabled = true;
-  driveFetch("https://www.googleapis.com/drive/v3/files?q=" + q + "&fields=files(id,name,mimeType,modifiedTime)&pageSize=200&orderBy=modifiedTime desc")
-  .then(function(r){ return r.json(); })
-  .then(function(j){
-    var files = (j.files || []).filter(function(f){
-      return f.mimeType === "application/vnd.google-apps.document" || /\.(md|txt)$/i.test(f.name) || (f.mimeType && f.mimeType.indexOf("text/") === 0);
-    });
-    return Promise.all(files.map(function(f){
-      var url = f.mimeType === "application/vnd.google-apps.document"
-        ? "https://www.googleapis.com/drive/v3/files/" + f.id + "/export?mimeType=text/plain"
-        : "https://www.googleapis.com/drive/v3/files/" + f.id + "?alt=media";
-      return driveFetch(url).then(function(r){ return r.text(); }).then(function(txt){
-        return { id: f.id, name: f.name, mimeType: f.mimeType, modifiedTime: f.modifiedTime, content: txt, tags: parseTags(txt) };
-      }).catch(function(){ return { id: f.id, name: f.name, mimeType: f.mimeType, modifiedTime: f.modifiedTime, content: "", tags: [] }; });
-    }));
-  })
-  .then(function(loaded){
-    configFiles = {};
-    stories = [];
-    loaded.forEach(function(f){
-      if(f.name.charAt(0) === "_"){ configFiles[f.name] = f; }
-      else stories.push(f);
-    });
-    taxonomy = configFiles[TAXONOMY_NAME] ? parseTaxonomy(configFiles[TAXONOMY_NAME].content) : [];
-    store("adviser_bank_cache", JSON.stringify(stories.map(function(s){ return { name: s.name, tags: s.tags }; })));
-    renderBank();
-  })
-  .catch(function(e){ toast(e.message || "Could not load the bank."); })
-  .finally(function(){ el("btnRefresh").disabled = false; });
-}
-
-function saveToBank(name, content){
-  if(!driveReady()){ connectDrive(); toast("Connect Drive, then try again."); return Promise.reject(new Error("not connected")); }
-  var folder = read("adviser_folder") || DEFAULT_FOLDER;
-  var boundary = "adviser_boundary_2718";
-  var meta = { name: name, parents: [folder], mimeType: "text/markdown" };
-  var body =
-    "--" + boundary + "\r\n" +
-    "Content-Type: application/json; charset=UTF-8\r\n\r\n" +
-    JSON.stringify(meta) + "\r\n" +
-    "--" + boundary + "\r\n" +
-    "Content-Type: text/markdown; charset=UTF-8\r\n\r\n" +
-    content + "\r\n" +
-    "--" + boundary + "--";
-  return driveFetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-    method: "POST",
-    headers: { "Content-Type": "multipart/related; boundary=" + boundary },
-    body: body
-  }).then(function(r){ return r.json(); });
-}
-
-function updateFile(id, content){
-  if(!driveReady()){ connectDrive(); return Promise.reject(new Error("Drive not connected; try again after connecting.")); }
-  return driveFetch("https://www.googleapis.com/upload/drive/v3/files/" + id + "?uploadType=media", {
-    method: "PATCH",
-    headers: { "Content-Type": "text/markdown; charset=UTF-8" },
-    body: content
-  }).then(function(r){ return r.json(); });
-}
-
-function trashFile(id){
-  return driveFetch("https://www.googleapis.com/drive/v3/files/" + id, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ trashed: true })
-  }).then(function(r){ return r.json(); });
-}
-
 /* ================= Anthropic ================= */
 
 function bankIndex(){
-  if(!stories.length){
-    var cached = read("adviser_bank_cache");
-    if(cached){ try{ return JSON.parse(cached).map(function(s){ return "- " + s.name + (s.tags.length ? " (" + s.tags.join(", ") + ")" : ""); }).join("\n"); }catch(e){} }
-    return "";
-  }
-  return stories.map(function(s){ return "- " + s.name.replace(/\.md$/,"") + (s.tags.length ? " (" + s.tags.join(", ") + ")" : ""); }).join("\n");
+  return entries.map(function(s){
+    return "- [" + s.kind + "] " + s.title + ((s.tags||[]).length ? " (" + s.tags.join(", ") + ")" : "");
+  }).join("\n");
 }
-
 function coverageSummary(){
-  if(!taxonomy.length) return "";
-  return taxonomy.map(function(t){
+  if(!tagList.length) return "";
+  return tagList.map(function(t){
     var n = tagCount(t);
     return "- " + t + ": " + (n ? n + " item(s)" : "NO COVERAGE");
   }).join("\n");
 }
-
-function fullStoriesContext(){
+function backlogText(kindWanted){
+  var items = backlog.filter(function(b){ return (b.kind || "story") === kindWanted; });
+  if(!items.length) return "";
+  return items.map(function(b){
+    return "- [priority " + b.priority + " | " + b.status + "] " + b.title + (b.why ? " — " + b.why : "");
+  }).join("\n");
+}
+function doctrineContext(){
+  var cap = 60000, used = 0, parts = [];
+  var docs = entries.filter(isKnowledge);
+  for(var i=0;i<docs.length;i++){
+    var block = "=== " + docs[i].kind.toUpperCase() + ": " + docs[i].title + " ===\n" +
+      (docs[i].one_line ? docs[i].one_line + "\n" : "") + (docs[i].body || "") + "\n";
+    if(used + block.length > cap){ parts.push("(Further doctrine omitted for length.)"); break; }
+    parts.push(block); used += block.length;
+  }
+  return parts.join("\n");
+}
+function fullEntriesContext(){
   var cap = 80000, used = 0, parts = [];
-  for(var i=0;i<stories.length;i++){
-    var s = stories[i];
-    var block = "=== FILE: " + s.name + " ===\n" + (s.content || "") + "\n";
-    if(used + block.length > cap){ parts.push("(Further files omitted for length: " + stories.slice(i).map(function(x){ return x.name; }).join(", ") + ")"); break; }
+  for(var i=0;i<entries.length;i++){
+    var block = "=== ENTRY: " + entries[i].title + " (" + entries[i].kind + ") ===\n" + entryMarkdown(entries[i]) + "\n";
+    if(used + block.length > cap){ parts.push("(Further entries omitted for length.)"); break; }
     parts.push(block); used += block.length;
   }
   return parts.join("\n");
@@ -898,21 +903,29 @@ function fullStoriesContext(){
 function systemPrompt(){
   var sp = BASE_PROMPT + "\n\n" + MODES[state.mode].prompt;
   if(state.mode === "capture"){
-    var backlog = configFiles[BACKLOG_NAME] ? configFiles[BACKLOG_NAME].content : "";
-    if(backlog) sp += "\n\nSTORY BACKLOG:\n" + backlog;
+    var bt = backlogText("story");
+    if(bt) sp += "\n\nSTORY BACKLOG:\n" + bt;
     var cov = coverageSummary();
     if(cov) sp += "\n\nTAG COVERAGE (taxonomy tags vs items in the bank):\n" + cov;
-    if(taxonomy.length) sp += "\n\nTAXONOMY (preferred tags): " + taxonomy.join(", ");
+    if(tagList.length) sp += "\n\nTAXONOMY (preferred tags): " + tagList.join(", ");
     var idx0 = bankIndex();
     if(idx0) sp += "\n\nALREADY IN THE BANK:\n" + idx0;
+  } else if(state.mode === "codify"){
+    var kb = backlogText("knowledge");
+    if(kb) sp += "\n\nKNOWLEDGE BACKLOG (methods worth codifying):\n" + kb;
+    var docIdx = entries.filter(isKnowledge).map(function(s){ return "- [" + s.kind + "] " + s.title + (s.status ? " (" + s.status + ")" : ""); }).join("\n");
+    sp += "\n\nEXISTING DOCTRINE (already codified; seeded drafts are fair game to refine):\n" + (docIdx || "(none yet)");
+    if(tagList.length) sp += "\n\nTAXONOMY (preferred tags): " + tagList.join(", ");
   } else if(state.mode === "prep"){
-    var full = fullStoriesContext();
-    if(full) sp += "\n\nFULL STORY FILES FROM HIS BANK:\n" + full;
-    var backlog2 = configFiles[BACKLOG_NAME] ? configFiles[BACKLOG_NAME].content : "";
-    if(backlog2) sp += "\n\nUNCAPTURED STORY BACKLOG (material he has but has not written up; flag if this room needs one of these):\n" + backlog2;
+    var full = fullEntriesContext();
+    if(full) sp += "\n\nFULL BANK ENTRIES:\n" + full;
+    var bt2 = backlogText("story");
+    if(bt2) sp += "\n\nUNCAPTURED STORY BACKLOG (material he has but has not written up; flag if this room needs one of these):\n" + bt2;
   } else {
+    var doc = doctrineContext();
+    if(doc) sp += "\n\nHIS DOCTRINE (his own principles, playbooks, lessons, and decisions; think WITH these: challenge him using his own standards, cite them by name when his current thinking violates or forgets them, and notice when a situation matches one of his worked examples):\n" + doc;
     var idx = bankIndex();
-    if(idx) sp += "\n\nBANK INDEX (titles and tags of what already exists in his Career Evidence Bank):\n" + idx;
+    if(idx) sp += "\n\nBANK INDEX (everything in his Career Evidence Bank, titles and tags):\n" + idx;
   }
   return sp;
 }
@@ -1006,15 +1019,19 @@ function send(){
   respond(1024);
 }
 
+/* ================= Artifact ================= */
+
+var lastArtifact = "";
+
 function generateArtifact(){
   if(busy || !state.mode) return;
   var asks = {
-    capture: "Generate the final story file for this session now, following the capture schema exactly, starting with a single # title line. Output pure markdown only, no preamble and no commentary.",
-    challenge: "Generate the final written review for this session now: a single # title line, then Strengths, Gaps, Unresolved decisions, and Danger zones where relevant. Output pure markdown only, no preamble and no commentary.",
-    prep: "Generate the complete prep pack for this session now, following the prep pack structure, starting with a single # title line. Output pure markdown only, no preamble and no commentary."
+    capture: "Generate the final story entry for this session now, following the capture structure exactly, starting with a single '# ' title line and the metadata block. Output pure markdown only, no preamble and no commentary.",
+    codify: "Generate the final doctrine entry for this session now, following the codify structure exactly, starting with a single '# ' title line and the metadata block including the 'Kind:' line. Output pure markdown only, no preamble and no commentary.",
+    challenge: "Generate the final written review for this session now, following the review structure, starting with a single '# ' title line. Output pure markdown only, no preamble and no commentary.",
+    prep: "Generate the complete prep pack for this session now, following the prep pack structure, starting with a single '# ' title line. Output pure markdown only, no preamble and no commentary."
   };
-  var prefixes = { capture: "Story - ", challenge: "Review - ", prep: "Prep - " };
-  var titles = { capture: "Story file", challenge: "Session review", prep: "Prep pack" };
+  var titles = { capture: "Story entry", codify: "Doctrine entry", challenge: "Session review", prep: "Prep pack" };
   busy = true;
   el("btnArtifact").disabled = true;
   el("thinking").style.display = "";
@@ -1028,9 +1045,7 @@ function generateArtifact(){
     box.textContent = sofar;
   }).then(function(full){
     box.textContent = full;
-    var m = full.match(/^#\s+(.+)$/m);
-    var base = m ? m[1].trim() : "Adviser output";
-    el("artifactName").value = prefixes[state.mode] + base.replace(/[\\/:*?"<>|]/g, "") + ".md";
+    lastArtifact = full;
   }).catch(function(err){
     el("artifactOverlay").classList.remove("open");
     toast(err.message || "Could not generate the artifact.");
@@ -1041,14 +1056,64 @@ function generateArtifact(){
   });
 }
 
+function parseArtifact(text){
+  function grab(re){ var m = text.match(re); return m ? m[1].trim() : null; }
+  var title = grab(/^#\s+(.+)$/m) || "Untitled";
+  var tagsLine = grab(/Competency tags[:\*\s]*([^\n]+)/i);
+  var tags = tagsLine ? tagsLine.replace(/\*\*/g,"").split(",").map(function(s){ return s.trim(); }).filter(Boolean) : [];
+  var body = text.replace(/^#\s+.+$/m, "");
+  ["Kind","Organization","Role","Period","Status","One-line","Competency tags"].forEach(function(k){
+    body = body.replace(new RegExp("^\\**" + k + "\\**[:\\s].*$", "im"), "");
+  });
+  body = body.replace(/^\s+/, "");
+  return {
+    declaredKind: grab(/^\**Kind\**[:\s]+(\w+)/im),
+    title: title,
+    organization: grab(/^\**Organization\**[:\s]+(.+)$/im),
+    role: grab(/^\**Role\**[:\s]+(.+)$/im),
+    period: grab(/^\**Period\**[:\s]+(.+)$/im),
+    status: grab(/^\**Status\**[:\s]+(.+)$/im),
+    one_line: grab(/^\**One-line\**[:\s]+(.+)$/im),
+    tags: tags,
+    body: body
+  };
+}
+
+function saveArtifact(){
+  if(!lastArtifact){ toast("Nothing to save yet."); return; }
+  if(!db || !sessionUser){ toast("Sign in first (Bank screen)."); return; }
+  var kinds = { capture: "story", challenge: "review", prep: "prep" };
+  var p = parseArtifact(lastArtifact);
+  if(state.mode === "codify"){
+    p.kind = (p.declaredKind && KNOWLEDGE_KINDS.indexOf(p.declaredKind.toLowerCase()) !== -1) ? p.declaredKind.toLowerCase() : "playbook";
+  } else {
+    p.kind = kinds[state.mode] || "story";
+  }
+  delete p.declaredKind;
+  el("btnSaveArtifact").disabled = true;
+  db.from("entries").insert(p).then(function(r){
+    if(r.error){ toast(r.error.message); return; }
+    var newTags = p.tags.filter(function(t){ return tagList.indexOf(t) === -1; });
+    var addP = newTags.length ? db.from("tags").upsert(newTags.map(function(t){ return { name: t }; })) : Promise.resolve({});
+    return Promise.resolve(addP).then(function(){
+      toast("Saved to the bank.", true);
+      el("artifactOverlay").classList.remove("open");
+      lastArtifact = "";
+      state.mode = null; state.messages = [];
+      saveSession();
+      show("bank");
+      loadAll();
+    });
+  }).finally(function(){ el("btnSaveArtifact").disabled = false; });
+}
+
 /* ================= Settings ================= */
 
 function openSettings(){
+  el("sbUrl").value = read("adviser_sburl") || "";
+  el("sbKey").value = read("adviser_sbkey") || "";
   el("apiKey").value = read("adviser_key") || "";
   el("modelId").value = read("adviser_model") || "claude-sonnet-4-5";
-  el("gClientId").value = read("adviser_gclient") || "";
-  el("folderId").value = read("adviser_folder") || DEFAULT_FOLDER;
-  el("driveStatus").textContent = driveReady() ? "Connected." : "Not connected.";
   el("settingsOverlay").classList.add("open");
 }
 
@@ -1064,11 +1129,12 @@ document.addEventListener("DOMContentLoaded", function(){
   loadSession();
 
   el("btnNewCapture").addEventListener("click", function(){ startMode("capture"); });
+  el("btnNewCodify").addEventListener("click", function(){ startMode("codify"); });
   el("btnNewChallenge").addEventListener("click", function(){ startMode("challenge"); });
   el("btnNewPrep").addEventListener("click", function(){ startMode("prep"); });
   el("btnTags").addEventListener("click", openTagManager);
   el("btnAddTag").addEventListener("click", addTag);
-  el("btnRefresh").addEventListener("click", refreshBank);
+  el("btnExport").addEventListener("click", exportAll);
   el("search").addEventListener("input", renderBank);
 
   var cards = document.querySelectorAll(".mode-card");
@@ -1085,50 +1151,47 @@ document.addEventListener("DOMContentLoaded", function(){
 
   el("btnSettings").addEventListener("click", openSettings);
   el("btnSaveSettings").addEventListener("click", function(){
+    var u = el("sbUrl").value.trim().replace(/\/+$/,"");
+    var sk = el("sbKey").value.trim();
+    var oldU = read("adviser_sburl") || "", oldK = read("adviser_sbkey") || "";
+    if(u) store("adviser_sburl", u); else localStorage.removeItem("adviser_sburl");
+    if(sk) store("adviser_sbkey", sk); else localStorage.removeItem("adviser_sbkey");
     var k = el("apiKey").value.trim();
     if(k) store("adviser_key", k); else localStorage.removeItem("adviser_key");
     store("adviser_model", el("modelId").value.trim() || "claude-sonnet-4-5");
-    var oldCid = read("adviser_gclient") || "";
-    var newCid = el("gClientId").value.trim();
-    store("adviser_gclient", newCid);
-    if(newCid !== oldCid) tokenClient = null;
-    store("adviser_folder", el("folderId").value.trim() || DEFAULT_FOLDER);
     el("settingsOverlay").classList.remove("open");
-    renderBank();
+    if(u !== oldU || sk !== oldK){ db = null; sessionUser = null; }
+    if(initDb()){
+      db.auth.getSession().then(function(r){
+        sessionUser = r.data && r.data.session ? r.data.session.user : null;
+        renderAuth();
+        if(sessionUser) loadAll();
+      });
+    } else renderAuth();
   });
-  el("btnConnectDrive").addEventListener("click", connectDrive);
+  el("btnSignOut").addEventListener("click", function(){
+    if(db) db.auth.signOut();
+    sessionUser = null;
+    el("settingsOverlay").classList.remove("open");
+    renderAuth();
+  });
 
   el("btnArtifact").addEventListener("click", generateArtifact);
   el("btnCopyArtifact").addEventListener("click", function(){
-    var text = el("artifactText").textContent;
-    if(navigator.clipboard) navigator.clipboard.writeText(text).then(function(){ toast("Copied.", true); });
+    if(navigator.clipboard && lastArtifact) navigator.clipboard.writeText(lastArtifact).then(function(){ toast("Copied.", true); });
   });
   el("btnDownloadArtifact").addEventListener("click", function(){
-    var text = el("artifactText").textContent;
-    var name = el("artifactName").value.trim() || "adviser-artifact.md";
-    var blob = new Blob([text], { type: "text/markdown" });
+    if(!lastArtifact){ toast("Nothing to download yet."); return; }
+    var m = lastArtifact.match(/^#\s+(.+)$/m);
+    var name = ((m ? m[1] : "adviser-artifact").replace(/[\\/:*?"<>|]/g,"")) + ".md";
+    var blob = new Blob([lastArtifact], { type: "text/markdown" });
     var a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = name;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(a.href);
   });
-  el("btnSaveArtifact").addEventListener("click", function(){
-    var text = el("artifactText").textContent;
-    var name = el("artifactName").value.trim() || "adviser-artifact.md";
-    if(!text){ toast("Nothing to save yet."); return; }
-    el("btnSaveArtifact").disabled = true;
-    saveToBank(name, text).then(function(){
-      toast("Saved to the bank.", true);
-      el("artifactOverlay").classList.remove("open");
-      state.mode = null; state.messages = [];
-      saveSession();
-      show("bank");
-      refreshBank();
-    }).catch(function(e){
-      if(e.message !== "not connected") toast(e.message || "Save failed; use Download instead.");
-    }).finally(function(){ el("btnSaveArtifact").disabled = false; });
-  });
+  el("btnSaveArtifact").addEventListener("click", saveArtifact);
 
   var closers = document.querySelectorAll("[data-close]");
   for(var j=0;j<closers.length;j++){
@@ -1137,7 +1200,14 @@ document.addEventListener("DOMContentLoaded", function(){
 
   if(state.mode && state.messages.length){ renderChat(); show("chat"); }
   else show("bank");
-  renderBank();
+
+  if(initDb()){
+    db.auth.getSession().then(function(r){
+      sessionUser = r.data && r.data.session ? r.data.session.user : null;
+      renderAuth();
+      if(sessionUser) loadAll();
+    });
+  } else renderAuth();
 });
 </script>
 </body>
