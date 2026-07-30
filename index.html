@@ -82,6 +82,13 @@
   .story .t{font-weight:650; margin-bottom:4px; display:flex; align-items:center}
   .story .m{font-size:12.5px; color:var(--ink-soft)}
   .story .o{font-size:13.5px; color:var(--ink-soft); margin-top:4px}
+  .sec-h{
+    display:flex; justify-content:space-between; align-items:center; gap:8px;
+    margin:20px 0 8px; padding:6px 2px; font-size:12px; font-weight:700;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft);
+    cursor:pointer; border-bottom:1px solid var(--line); user-select:none;
+  }
+  .sec-h .sec-n{font-weight:600; background:var(--chip); border-radius:999px; padding:1px 9px; font-size:11px}
   .empty{text-align:center; color:var(--ink-soft); padding:40px 10px; font-size:15px}
   .empty .big{font-size:17px; color:var(--ink); font-weight:600; margin-bottom:8px}
   .authcard{
@@ -247,14 +254,15 @@
           <button id="btnNewCodify">Codify</button>
           <button id="btnNewChallenge">Challenge</button>
           <button id="btnNewPrep">Prep</button>
+          <button id="btnImport">Import</button>
           <button class="quiet" id="btnTags">Tags</button>
+          <button class="quiet" id="btnBacklog">Backlog</button>
           <button class="quiet" id="btnExport">Export all</button>
           <button class="quiet" id="btnResume" style="display:none">Resume session</button>
         </div>
         <div class="bank-toolbar">
           <input id="search" type="search" placeholder="Search titles, tags, content&hellip;">
         </div>
-        <div class="tagrow" id="kindRow"></div>
         <div class="tagrow" id="tagRow"></div>
         <div id="storyList"></div>
         <div class="empty" id="bankEmpty" style="display:none"></div>
@@ -266,7 +274,9 @@
       <div class="reader-toolbar">
         <button id="btnReaderEdit">Edit</button>
         <button id="btnReaderPdf">Export PDF</button>
+        <button id="btnReaderFile" style="display:none">Original file</button>
         <button id="btnReaderCopy">Copy markdown</button>
+        <button id="btnReaderArchive">Archive</button>
         <button class="danger" id="btnReaderDelete">Delete</button>
       </div>
       <article class="paper">
@@ -407,7 +417,7 @@
     <div class="m-head"><h3>How this works</h3><button class="quiet" data-close>&#10005;</button></div>
     <div class="m-body" id="helpBody">
       <h3>The Bank (home)</h3>
-      <p>Everything the Adviser knows about you, in two kinds. <strong>Stories &amp; evidence</strong> are things that happened: captured stories, reusable interview answers, debriefs, prep packs, and session reviews. <strong>Doctrine</strong> is how you work: principles, playbooks, lessons, and logged decisions. Search covers titles, tags, and full text; tap the tag chips to filter; tap any card to read it, and from there Edit, retag, copy, or delete.</p>
+      <p>Everything the Adviser knows about you, grouped in collapsible sections: <strong>Stories &amp; evidence</strong> (what happened), <strong>Doctrine</strong> (how you work), <strong>Clippings</strong> (imported material), and <strong>Working documents</strong> (prep packs, reviews, debriefs). A Recent row appears once the bank is big enough to need one. Search covers titles, tags, and full text, and searching flattens everything, archived included, into one result list. The tag row shows your ten most-used tags; the rest sit behind the expander. Tap any card to read it.</p>
 
       <h3>Capture</h3>
       <p>An interview about your past work. The Adviser proposes what to capture next from your story backlog and coverage gaps, then digs for the texture polished versions leave out: the people, the decisions, the numbers, the uncomfortable bit. Ends with a story entry saved to the bank.</p>
@@ -421,11 +431,20 @@
       <h3>Prep</h3>
       <p>Paste a job description or describe a room you are walking into. The Adviser reads your entire bank, decodes the audience, maps your stories to the likely questions, interviews you to fill the critical gaps, and writes the full prep pack.</p>
 
+      <h3>Import</h3>
+      <p>Feed the bank from outside: a LinkedIn screenshot, a useful diagram, a PDF. The Adviser reads the file, extracts the substance faithfully (frameworks, stats, quotes), tags it, and saves it as a clipping. Add a note about where it came from and why you kept it; that context sharpens the extraction. Optionally store the original file too; the "Original file" button in the reader opens it. Clippings join the material Prep and Challenge sessions can draw on.</p>
+
       <h3>Finish &amp; write up</h3>
       <p>End every session with this button. The written artifact is the point of the session; one without it is unfinished. Save it to the bank, or copy and download it as markdown.</p>
 
       <h3>Tags</h3>
       <p>The retrieval system. Add new tags, rename one (updates every entry that uses it), or retire it from the suggestion list. A specific entry's tags are edited inside its viewer.</p>
+
+      <h3>Backlog</h3>
+      <p>The list Capture and Codify propose from: stories not yet captured and methods not yet codified. When you save a matching entry, the app offers to mark the item captured automatically; you can also adjust statuses, add items, or remove them here. Feed it whenever you think "I should write that up sometime."</p>
+
+      <h3>Archive</h3>
+      <p>For entries whose moment has passed, an old prep pack, a superseded review. Archiving (button in the reader) removes an entry from the home sections and from the Adviser's working context, but keeps it searchable and exportable. Nothing is lost; the home screen just stays honest about what's current.</p>
 
       <h3>Export all</h3>
       <p>Downloads the entire bank as a single markdown file. Do this after any session that adds something important; career evidence should never live in only one place.</p>
@@ -437,6 +456,57 @@
     </div>
     <div class="m-foot">
       <button data-close class="primary">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT -->
+<div class="overlay" id="importOverlay">
+  <div class="modal">
+    <div class="m-head"><h3>Import a file</h3><button class="quiet" data-close>&#10005;</button></div>
+    <div class="m-body">
+      <div class="field">
+        <label for="importFile">Screenshot, image, or PDF</label>
+        <input id="importFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf">
+        <div class="hint">The Adviser reads it, extracts the substance, and saves it as a tagged clipping. Images up to 5MB, PDFs up to 15MB.</div>
+      </div>
+      <div class="field">
+        <label for="importNote">Note (optional but valuable)</label>
+        <input id="importNote" type="text" placeholder="Where it's from, why you kept it&hellip;">
+      </div>
+      <div class="field">
+        <label><input id="importKeep" type="checkbox" checked style="width:auto; margin-right:6px">Store the original file too</label>
+        <div class="hint">Originals live in your database's private storage (about 1GB free). Untick for big files you already keep elsewhere.</div>
+      </div>
+      <div class="hint" id="importStatus"></div>
+    </div>
+    <div class="m-foot">
+      <button data-close>Cancel</button>
+      <button class="primary" id="btnDoImport">Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- BACKLOG -->
+<div class="overlay" id="backlogOverlay">
+  <div class="modal">
+    <div class="m-head"><h3>Backlog</h3><button class="quiet" data-close>&#10005;</button></div>
+    <div class="m-body">
+      <div class="hint" style="margin-bottom:10px">What Capture and Codify propose from. Statuses update automatically when a matching entry is saved; adjust anything here.</div>
+      <div class="tagadd" style="flex-wrap:wrap">
+        <input id="blTitle" type="text" placeholder="New backlog item&hellip;" style="flex:2; min-width:160px">
+        <select id="blKind" style="font:inherit; padding:7px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--ink)">
+          <option value="story">story</option><option value="knowledge">knowledge</option>
+        </select>
+        <select id="blPriority" style="font:inherit; padding:7px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--ink)">
+          <option value="1">p1</option><option value="2" selected>p2</option><option value="3">p3</option>
+        </select>
+        <button id="btnAddBacklog">Add</button>
+      </div>
+      <div id="backlogList" style="margin-top:12px"></div>
+    </div>
+    <div class="m-foot">
+      <button data-close class="primary">Done</button>
     </div>
   </div>
 </div>
@@ -551,8 +621,28 @@ var sessionUser = null;
 var entries = [], tagList = [], backlog = [];
 var activeTags = {};
 var KNOWLEDGE_KINDS = ["principle","playbook","lesson","decision"];
-var kindFilter = "all";    // all | stories | knowledge
+var tagsExpanded = false;
 function isKnowledge(s){ return KNOWLEDGE_KINDS.indexOf(s.kind) !== -1; }
+function family(s){
+  if(s.archived) return "archived";
+  if(isKnowledge(s)) return "doctrine";
+  if(s.kind === "clipping") return "clippings";
+  if(s.kind === "story" || s.kind === "answer") return "evidence";
+  return "working";
+}
+var FAMILIES = [
+  { key:"evidence", label:"Stories & evidence" },
+  { key:"doctrine", label:"Doctrine" },
+  { key:"clippings", label:"Clippings" },
+  { key:"working", label:"Working documents" },
+  { key:"archived", label:"Archived" }
+];
+function secCollapsed(key){
+  var v = read("adviser_sec_" + key);
+  if(v === null) return key === "archived";
+  return v === "1";
+}
+function activeEntries(){ return entries.filter(function(s){ return !s.archived; }); }
 var currentEntry = null;
 var editTags = null;
 
@@ -695,6 +785,30 @@ function tagCount(tag){
   return n;
 }
 
+function matchesFilters(s, q, tagsOn){
+  var hay = (s.title + " " + (s.one_line||"") + " " + (s.tags||[]).join(" ") + " " + (s.body||"")).toLowerCase();
+  if(q && hay.indexOf(q) === -1) return false;
+  for(var i=0;i<tagsOn.length;i++){ if((s.tags||[]).indexOf(tagsOn[i]) === -1) return false; }
+  return true;
+}
+
+function makeCard(s){
+  var b = document.createElement("button");
+  b.className = "story";
+  var d = s.updated_at ? new Date(s.updated_at).toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}) : "";
+  var metaBits = [];
+  if(s.organization) metaBits.push(s.organization);
+  if(s.period) metaBits.push(s.period);
+  metaBits.push(d);
+  b.innerHTML =
+    "<div class='t'><span class='kind'>" + esc(s.kind) + "</span>" + esc(s.title) +
+    (s.archived ? " <span class='kind'>archived</span>" : "") + "</div>" +
+    (s.one_line ? "<div class='o'>" + esc(s.one_line) + "</div>" : "") +
+    "<div class='m'>" + esc(metaBits.join(" · ")) + ((s.tags && s.tags.length) ? " · " + esc(s.tags.slice(0,4).join(", ")) : "") + "</div>";
+  b.addEventListener("click", function(){ openReader(s); });
+  return b;
+}
+
 function renderBank(){
   if(!sessionUser) return;
   var q = (el("search").value || "").toLowerCase();
@@ -702,54 +816,66 @@ function renderBank(){
   var list = el("storyList");
   list.innerHTML = "";
 
-  var kr = el("kindRow");
-  kr.innerHTML = "";
-  [["all","All"],["stories","Stories & evidence"],["knowledge","Doctrine"]].forEach(function(pair){
-    var c = document.createElement("span");
-    c.className = "chip" + (kindFilter === pair[0] ? " on" : "");
-    c.textContent = pair[1];
-    c.addEventListener("click", function(){ kindFilter = pair[0]; renderBank(); });
-    kr.appendChild(c);
-  });
-
+  /* Tags: ten most used, the rest behind an expander */
   var tr = el("tagRow");
   tr.innerHTML = "";
-  unionTags().forEach(function(t){
-    if(tagCount(t) === 0 && !activeTags[t]) return;
+  var counted = unionTags().map(function(t){ return { t: t, n: tagCount(t) }; })
+    .filter(function(x){ return x.n > 0 || activeTags[x.t]; })
+    .sort(function(a,b){ return b.n - a.n; });
+  (tagsExpanded ? counted : counted.slice(0, 10)).forEach(function(x){
     var c = document.createElement("span");
-    c.className = "chip" + (activeTags[t] ? " on" : "");
-    c.textContent = t;
-    c.addEventListener("click", function(){ activeTags[t] = !activeTags[t]; renderBank(); });
+    c.className = "chip" + (activeTags[x.t] ? " on" : "");
+    c.textContent = x.t;
+    c.addEventListener("click", function(){ activeTags[x.t] = !activeTags[x.t]; renderBank(); });
     tr.appendChild(c);
   });
+  if(counted.length > 10){
+    var more = document.createElement("span");
+    more.className = "chip";
+    more.textContent = tagsExpanded ? "fewer tags" : "+" + (counted.length - 10) + " more";
+    more.addEventListener("click", function(){ tagsExpanded = !tagsExpanded; renderBank(); });
+    tr.appendChild(more);
+  }
 
   var shown = 0;
-  entries.forEach(function(s){
-    if(kindFilter === "stories" && isKnowledge(s)) return;
-    if(kindFilter === "knowledge" && !isKnowledge(s)) return;
-    var hay = (s.title + " " + (s.one_line||"") + " " + (s.tags||[]).join(" ") + " " + (s.body||"")).toLowerCase();
-    if(q && hay.indexOf(q) === -1) return;
-    for(var i=0;i<tagsOn.length;i++){ if((s.tags||[]).indexOf(tagsOn[i]) === -1) return; }
-    shown++;
-    var b = document.createElement("button");
-    b.className = "story";
-    var d = s.updated_at ? new Date(s.updated_at).toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}) : "";
-    var metaBits = [];
-    if(s.organization) metaBits.push(s.organization);
-    if(s.period) metaBits.push(s.period);
-    metaBits.push(d);
-    b.innerHTML =
-      "<div class='t'><span class='kind'>" + esc(s.kind) + "</span>" + esc(s.title) + "</div>" +
-      (s.one_line ? "<div class='o'>" + esc(s.one_line) + "</div>" : "") +
-      "<div class='m'>" + esc(metaBits.join(" · ")) + ((s.tags && s.tags.length) ? " · " + esc(s.tags.slice(0,4).join(", ")) : "") + "</div>";
-    b.addEventListener("click", function(){ openReader(s); });
-    list.appendChild(b);
-  });
+  if(q || tagsOn.length){
+    /* Searching or filtering: one flat result list, archived included */
+    entries.forEach(function(s){
+      if(!matchesFilters(s, q, tagsOn)) return;
+      shown++;
+      list.appendChild(makeCard(s));
+    });
+  } else {
+    var act = activeEntries();
+    if(act.length > 8){
+      var rh = document.createElement("div");
+      rh.className = "sec-h";
+      rh.style.cursor = "default";
+      rh.innerHTML = "<span>Recent</span>";
+      list.appendChild(rh);
+      act.slice().sort(function(a,b){ return (b.updated_at||"").localeCompare(a.updated_at||""); })
+        .slice(0,5).forEach(function(s){ shown++; list.appendChild(makeCard(s)); });
+    }
+    FAMILIES.forEach(function(f){
+      var items = entries.filter(function(s){ return family(s) === f.key; });
+      if(!items.length) return;
+      var collapsed = secCollapsed(f.key);
+      var h = document.createElement("div");
+      h.className = "sec-h";
+      h.innerHTML = "<span>" + (collapsed ? "&#9656; " : "&#9662; ") + f.label + "</span><span class='sec-n'>" + items.length + "</span>";
+      h.addEventListener("click", function(){ store("adviser_sec_" + f.key, secCollapsed(f.key) ? "0" : "1"); renderBank(); });
+      list.appendChild(h);
+      if(!collapsed) items.forEach(function(s){ shown++; list.appendChild(makeCard(s)); });
+    });
+  }
 
   var empty = el("bankEmpty");
-  if(!shown){
+  if(!entries.length){
     empty.style.display = "";
-    empty.innerHTML = entries.length ? "Nothing matches that search." : "<div class='big'>The bank is empty</div>Capture your first story and it will appear here.";
+    empty.innerHTML = "<div class='big'>The bank is empty</div>Capture your first story and it will appear here.";
+  } else if((q || tagsOn.length) && !shown){
+    empty.style.display = "";
+    empty.innerHTML = "Nothing matches that search.";
   } else {
     empty.style.display = "none";
   }
@@ -779,6 +905,8 @@ function populateReader(s){
   if(s.one_line){ lede.textContent = s.one_line; lede.style.display = ""; }
   else lede.style.display = "none";
   el("rBody").innerHTML = md(s.body || "");
+  el("btnReaderArchive").textContent = s.archived ? "Unarchive" : "Archive";
+  el("btnReaderFile").style.display = s.attachment ? "" : "none";
 }
 
 function openReader(s){
@@ -1053,7 +1181,7 @@ function startMode(mode){
 /* ================= Anthropic ================= */
 
 function bankIndex(){
-  return entries.map(function(s){
+  return activeEntries().map(function(s){
     return "- [" + s.kind + "] " + s.title + ((s.tags||[]).length ? " (" + s.tags.join(", ") + ")" : "");
   }).join("\n");
 }
@@ -1073,7 +1201,7 @@ function backlogText(kindWanted){
 }
 function doctrineContext(){
   var cap = 60000, used = 0, parts = [];
-  var docs = entries.filter(isKnowledge);
+  var docs = activeEntries().filter(isKnowledge);
   for(var i=0;i<docs.length;i++){
     var block = "=== " + docs[i].kind.toUpperCase() + ": " + docs[i].title + " ===\n" +
       (docs[i].one_line ? docs[i].one_line + "\n" : "") + (docs[i].body || "") + "\n";
@@ -1084,8 +1212,9 @@ function doctrineContext(){
 }
 function fullEntriesContext(){
   var cap = 80000, used = 0, parts = [];
-  for(var i=0;i<entries.length;i++){
-    var block = "=== ENTRY: " + entries[i].title + " (" + entries[i].kind + ") ===\n" + entryMarkdown(entries[i]) + "\n";
+  var list = activeEntries();
+  for(var i=0;i<list.length;i++){
+    var block = "=== ENTRY: " + list[i].title + " (" + list[i].kind + ") ===\n" + entryMarkdown(list[i]) + "\n";
     if(used + block.length > cap){ parts.push("(Further entries omitted for length.)"); break; }
     parts.push(block); used += block.length;
   }
@@ -1290,6 +1419,7 @@ function saveArtifact(){
   }
   delete p.declaredKind;
   el("btnSaveArtifact").disabled = true;
+  var blKind = state.mode === "capture" ? "story" : (state.mode === "codify" ? "knowledge" : null);
   db.from("entries").insert(p).then(function(r){
     if(r.error){ toast(r.error.message); return; }
     var newTags = p.tags.filter(function(t){ return tagList.indexOf(t) === -1; });
@@ -1301,6 +1431,7 @@ function saveArtifact(){
       state.mode = null; state.messages = [];
       saveSession();
       show("bank");
+      if(blKind) offerBacklogUpdate(blKind, p.title);
       loadAll();
     });
   }).finally(function(){ el("btnSaveArtifact").disabled = false; });
@@ -1464,6 +1595,180 @@ function exportEntryPdf(s){
   }
 }
 
+/* ================= Import (files to clippings) ================= */
+
+function callClaudeOnce(systemText, contentBlocks, maxTokens){
+  var key = read("adviser_key");
+  var model = read("adviser_model") || "claude-sonnet-4-5";
+  return fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": key,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    },
+    body: JSON.stringify({ model: model, max_tokens: maxTokens, system: systemText, messages: [{ role: "user", content: contentBlocks }] })
+  }).then(function(res){
+    if(!res.ok){
+      return res.text().then(function(body){
+        var msg = "API error " + res.status;
+        try{ var j = JSON.parse(body); if(j.error && j.error.message) msg += ": " + j.error.message; }catch(e){}
+        throw new Error(msg);
+      });
+    }
+    return res.json();
+  }).then(function(j){
+    return (j.content && j.content[0] && j.content[0].text) ? j.content[0].text : "";
+  });
+}
+
+function ingestPrompt(){
+  var today = new Date().toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"});
+  return "You are the ingest function of The Adviser, the private communications knowledge bank of Gareth Thomas, a senior internal communications professional. Read the attached file and produce a clipping entry in markdown.\n\n" +
+    "Structure exactly: line 1 is '# ' plus a short descriptive title. Then metadata lines, one per line: 'Kind: clipping', 'Status: ingested " + today + "', 'Competency tags: ...' (prefer these existing tags where they fit: " + (tagList.join(", ") || "none defined") + "), 'One-line: ...' (one sentence: what this is and why it earned a place in the bank).\n\n" +
+    "Then sections: 'What this is' (type of material, source or author if identifiable); 'Key content' (the substance, faithfully extracted: frameworks, statistics, quotes, steps, arguments; quote exactly where the wording matters); 'Why it's useful' (informed by the user's note when provided); 'Possible uses' (brief, concrete).\n\n" +
+    "Be faithful to the file. Do not invent content that is not present. If text in an image is partially illegible, say so rather than guessing. Output pure markdown only, no preamble.";
+}
+
+function doImport(){
+  var input = el("importFile");
+  var file = input.files && input.files[0];
+  var status = el("importStatus");
+  if(!file){ toast("Choose a file first."); return; }
+  if(!read("adviser_key")){ openSettings(); toast("Add your Anthropic API key first."); return; }
+  var isPdf = file.type === "application/pdf";
+  var maxBytes = isPdf ? 15 * 1024 * 1024 : 5 * 1024 * 1024;
+  if(file.size > maxBytes){ toast("File too large (" + Math.round(file.size/1048576) + "MB). Limit: " + (isPdf ? "15MB for PDFs." : "5MB for images.")); return; }
+
+  el("btnDoImport").disabled = true;
+  status.textContent = "Reading file…";
+  var fr = new FileReader();
+  fr.onerror = function(){ status.textContent = ""; el("btnDoImport").disabled = false; toast("Could not read the file."); };
+  fr.onload = function(){
+    var b64 = String(fr.result).split(",")[1];
+    var block = isPdf
+      ? { type: "document", source: { type: "base64", media_type: "application/pdf", data: b64 } }
+      : { type: "image", source: { type: "base64", media_type: file.type, data: b64 } };
+    var note = el("importNote").value.trim();
+    var content = [block, { type: "text", text: note ? "User's note about this file: " + note : "No note provided." }];
+    status.textContent = "The Adviser is reading it…";
+    callClaudeOnce(ingestPrompt(), content, 4096).then(function(text){
+      var p = parseArtifact(text);
+      p.kind = "clipping";
+      delete p.declaredKind;
+      var attach = null;
+      var uploadP = Promise.resolve();
+      if(el("importKeep").checked && db){
+        status.textContent = "Storing the original…";
+        var safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        attach = "clip-" + Date.now() + "-" + safe;
+        uploadP = db.storage.from("adviser-files").upload(attach, file, { contentType: file.type })
+          .then(function(r){ if(r.error){ attach = null; toast("Original not stored (" + r.error.message + "); clipping saved without it. Have you run schema-update.sql?"); } });
+      }
+      return uploadP.then(function(){
+        status.textContent = "Saving to the bank…";
+        if(attach) p.attachment = attach;
+        return db.from("entries").insert(p).then(function(r){
+          if(r.error) throw new Error(r.error.message);
+          var newTags = (p.tags||[]).filter(function(t){ return tagList.indexOf(t) === -1; });
+          return newTags.length ? db.from("tags").upsert(newTags.map(function(t){ return { name: t }; })) : null;
+        });
+      });
+    }).then(function(){
+      toast("Clipping saved.", true);
+      el("importOverlay").classList.remove("open");
+      input.value = ""; el("importNote").value = ""; status.textContent = "";
+      loadAll();
+    }).catch(function(e){
+      status.textContent = "";
+      toast(e.message || "Import failed.");
+    }).finally(function(){ el("btnDoImport").disabled = false; });
+  };
+  fr.readAsDataURL(file);
+}
+
+/* ================= Backlog manager ================= */
+
+function renderBacklogMgr(){
+  var host = el("backlogList");
+  host.innerHTML = "";
+  ["story","knowledge"].forEach(function(kind){
+    var items = backlog.filter(function(b){ return (b.kind||"story") === kind; });
+    if(!items.length) return;
+    var h = document.createElement("div");
+    h.className = "sec-h";
+    h.style.cursor = "default";
+    h.innerHTML = "<span>" + (kind === "story" ? "Stories to capture" : "Knowledge to codify") + "</span><span class='sec-n'>" + items.length + "</span>";
+    host.appendChild(h);
+    items.forEach(function(b){
+      var row = document.createElement("div");
+      row.className = "tagmgr-row";
+      var n = document.createElement("span"); n.className = "n";
+      n.innerHTML = esc(b.title) + " <span class='c'>p" + b.priority + "</span>";
+      n.title = b.why || "";
+      var sel = document.createElement("select");
+      sel.style.cssText = "font:inherit; font-size:12.5px; padding:4px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--ink)";
+      ["not captured","partial","captured"].forEach(function(st){
+        var o = document.createElement("option");
+        o.value = st; o.textContent = st;
+        if(b.status === st) o.selected = true;
+        sel.appendChild(o);
+      });
+      sel.addEventListener("change", function(){
+        db.from("backlog_items").update({ status: sel.value }).eq("id", b.id).then(function(r){
+          if(r.error){ toast(r.error.message); return; }
+          b.status = sel.value;
+          toast("Updated.", true);
+        });
+      });
+      var bD = document.createElement("button"); bD.className = "small"; bD.textContent = "Remove";
+      bD.addEventListener("click", function(){
+        if(!confirm("Remove '" + b.title + "' from the backlog?")) return;
+        db.from("backlog_items").delete().eq("id", b.id).then(function(r){
+          if(r.error){ toast(r.error.message); return; }
+          backlog = backlog.filter(function(x){ return x.id !== b.id; });
+          renderBacklogMgr();
+        });
+      });
+      row.appendChild(n); row.appendChild(sel); row.appendChild(bD);
+      host.appendChild(row);
+    });
+  });
+  if(!backlog.length) host.innerHTML = "<div class='hint'>The backlog is empty. Add the next story or method worth getting out of your head.</div>";
+}
+
+function addBacklogItem(){
+  var title = el("blTitle").value.trim();
+  if(!title){ toast("Give it a title."); return; }
+  db.from("backlog_items").insert({
+    title: title,
+    kind: el("blKind").value,
+    priority: parseInt(el("blPriority").value, 10)
+  }).then(function(r){
+    if(r.error){ toast(r.error.message); return; }
+    el("blTitle").value = "";
+    toast("Added.", true);
+    loadAll().then(renderBacklogMgr);
+  });
+}
+
+function offerBacklogUpdate(kind, title){
+  function words(t){ return t.toLowerCase().split(/[^a-z0-9]+/).filter(function(w){ return w.length > 3; }); }
+  var tw = words(title);
+  var best = null, bestScore = 0;
+  backlog.forEach(function(b){
+    if((b.kind||"story") !== kind || b.status === "captured") return;
+    var bw = words(b.title), inter = 0;
+    bw.forEach(function(w){ if(tw.indexOf(w) !== -1) inter++; });
+    var score = inter / Math.max(1, Math.min(bw.length, tw.length));
+    if(score > bestScore){ bestScore = score; best = b; }
+  });
+  if(best && bestScore >= 0.5 && confirm("Mark backlog item '" + best.title + "' as captured?")){
+    db.from("backlog_items").update({ status: "captured" }).eq("id", best.id).then(function(){ loadAll(); });
+  }
+}
+
 /* ================= Settings ================= */
 
 function openSettings(){
@@ -1512,6 +1817,31 @@ document.addEventListener("DOMContentLoaded", function(){
     if(currentEntry && navigator.clipboard) navigator.clipboard.writeText(entryMarkdown(currentEntry)).then(function(){ toast("Copied.", true); });
   });
   el("btnReaderPdf").addEventListener("click", function(){ if(currentEntry) exportEntryPdf(currentEntry); });
+  el("btnReaderArchive").addEventListener("click", function(){
+    if(!currentEntry) return;
+    var to = !currentEntry.archived;
+    db.from("entries").update({ archived: to, updated_at: new Date().toISOString() }).eq("id", currentEntry.id).then(function(r){
+      if(r.error){ toast(r.error.message + (r.error.message.indexOf("archived") !== -1 ? " — have you run schema-update.sql?" : "")); return; }
+      currentEntry.archived = to;
+      populateReader(currentEntry);
+      toast(to ? "Archived. It stays searchable but leaves the home sections and the Adviser's context." : "Restored.", true);
+      loadAll();
+    });
+  });
+  el("btnReaderFile").addEventListener("click", function(){
+    if(!currentEntry || !currentEntry.attachment) return;
+    db.storage.from("adviser-files").createSignedUrl(currentEntry.attachment, 3600).then(function(r){
+      if(r.error || !r.data){ toast("Could not open the original: " + (r.error ? r.error.message : "unknown error")); return; }
+      window.open(r.data.signedUrl, "_blank");
+    });
+  });
+  el("btnImport").addEventListener("click", function(){
+    el("importStatus").textContent = "";
+    el("importOverlay").classList.add("open");
+  });
+  el("btnDoImport").addEventListener("click", doImport);
+  el("btnBacklog").addEventListener("click", function(){ renderBacklogMgr(); el("backlogOverlay").classList.add("open"); });
+  el("btnAddBacklog").addEventListener("click", addBacklogItem);
   el("btnReaderDelete").addEventListener("click", function(){
     if(!currentEntry) return;
     if(!confirm("Delete '" + currentEntry.title + "' from the bank? This cannot be undone.")) return;
