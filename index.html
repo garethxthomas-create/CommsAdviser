@@ -752,7 +752,22 @@ function renderAuth(){
   inner.style.display = "";
 }
 
-function loadAll(){
+function freshSession(){
+  if(!db) return Promise.resolve(null);
+  return db.auth.getSession().then(function(r){
+    var s = r.data && r.data.session;
+    if(!s) return null;
+    var exp = s.expires_at ? s.expires_at * 1000 : 0;
+    if(exp && exp - Date.now() < 60000){
+      return db.auth.refreshSession().then(function(r2){
+        return (r2.data && r2.data.session) ? r2.data.session : null;
+      }).catch(function(){ return null; });
+    }
+    return s;
+  });
+}
+
+function loadAll(retried){
   if(!db || !sessionUser) return Promise.resolve();
   return Promise.all([
     db.from("entries").select("*").order("updated_at", { ascending: false }),
@@ -761,6 +776,22 @@ function loadAll(){
   ]).then(function(res){
     if(res[0].error || res[1].error || res[2].error){
       var e = res[0].error || res[1].error || res[2].error;
+      if(!retried && /jwt|expired|token/i.test(e.message || "")){
+        /* Stale pass after a long sleep: renew quietly and retry once */
+        return db.auth.refreshSession().then(function(r2){
+          if(r2.data && r2.data.session){
+            sessionUser = r2.data.session.user;
+            return loadAll(true);
+          }
+          sessionUser = null;
+          renderAuth();
+          toast("Your sign-in lapsed; enter your email for a fresh link.");
+        }).catch(function(){
+          sessionUser = null;
+          renderAuth();
+          toast("Your sign-in lapsed; enter your email for a fresh link.");
+        });
+      }
       toast("Database error: " + e.message);
       return;
     }
@@ -1878,8 +1909,8 @@ document.addEventListener("DOMContentLoaded", function(){
     el("settingsOverlay").classList.remove("open");
     if(u !== oldU || sk !== oldK){ db = null; sessionUser = null; }
     if(initDb()){
-      db.auth.getSession().then(function(r){
-        sessionUser = r.data && r.data.session ? r.data.session.user : null;
+      freshSession().then(function(s){
+        sessionUser = s ? s.user : null;
         renderAuth();
         if(sessionUser) loadAll();
       });
@@ -1922,12 +1953,19 @@ document.addEventListener("DOMContentLoaded", function(){
   show("bank");
 
   if(initDb()){
-    db.auth.getSession().then(function(r){
-      sessionUser = r.data && r.data.session ? r.data.session.user : null;
+    freshSession().then(function(s){
+      sessionUser = s ? s.user : null;
       renderAuth();
       if(sessionUser) loadAll();
     });
   } else renderAuth();
+
+  /* Waking after a long sleep: renew the pass before anything else asks for data */
+  document.addEventListener("visibilitychange", function(){
+    if(document.visibilityState === "visible" && db && sessionUser){
+      freshSession().then(function(s){ if(s) sessionUser = s.user; });
+    }
+  });
 });
 </script>
 </body>
