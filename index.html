@@ -31,7 +31,11 @@
     border-bottom:1px solid var(--line); background:var(--panel);
     position:sticky; top:0; z-index:5;
   }
-  header h1{font-size:17px; margin:0; font-weight:700; letter-spacing:.2px}
+  header h1{font-size:17px; margin:0; font-weight:700; letter-spacing:.2px; cursor:pointer}
+  #helpBody h3{font-size:15px; margin:18px 0 4px}
+  #helpBody h3:first-child{margin-top:0}
+  #helpBody p{font-size:14px; margin:4px 0 10px}
+  #helpBody .hint{margin-top:14px}
   .badge{
     font-size:12px; font-weight:600; padding:3px 10px; border-radius:999px;
     background:var(--accent); color:var(--accent-ink); display:none;
@@ -173,6 +177,10 @@
   }
   #entryBody h3{font-size:14.5px; margin:16px 0 4px}
   #entryBody blockquote{margin:.5em 0; padding:2px 12px; border-left:3px solid var(--accent); color:var(--ink-soft)}
+  #editBody{
+    width:100%; min-height:320px; resize:vertical; font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:12px; max-height:none;
+  }
   .tagedit{display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:10px 0}
   .tagadd{display:flex; gap:6px; margin-top:8px}
   .tagadd input{flex:1; font:inherit; padding:7px 10px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--ink)}
@@ -190,11 +198,12 @@
 <body>
 
 <header>
-  <h1>The Adviser</h1>
+  <h1 id="brand" title="Back to the Bank">The Adviser</h1>
   <span class="badge" id="modeBadge"></span>
   <div class="spacer"></div>
   <button class="quiet" id="btnBank" style="display:none">Bank</button>
   <button class="quiet" id="btnArtifact" style="display:none" title="End the session and generate the written artifact">Finish &amp; write up</button>
+  <button class="quiet" id="btnHelp" aria-label="Help">?</button>
   <button class="quiet" id="btnSettings" aria-label="Settings">&#9881;</button>
 </header>
 
@@ -212,6 +221,7 @@
           <button id="btnNewPrep">Prep</button>
           <button class="quiet" id="btnTags">Tags</button>
           <button class="quiet" id="btnExport">Export all</button>
+          <button class="quiet" id="btnResume" style="display:none">Resume session</button>
         </div>
         <div class="bank-toolbar">
           <input id="search" type="search" placeholder="Search titles, tags, content&hellip;">
@@ -316,14 +326,68 @@
   <div class="modal">
     <div class="m-head"><h3 id="entryTitle">Entry</h3><button class="quiet" data-close>&#10005;</button></div>
     <div class="m-body">
-      <div id="entryMeta" class="entry-meta"></div>
-      <div id="entryLede" class="entry-lede" style="display:none"></div>
-      <div id="tagEditor"></div>
-      <div id="entryBody"></div>
+      <div id="entryView">
+        <div id="entryMeta" class="entry-meta"></div>
+        <div id="entryLede" class="entry-lede" style="display:none"></div>
+        <div id="tagEditor"></div>
+        <div id="entryBody"></div>
+      </div>
+      <div id="entryEdit" style="display:none">
+        <div class="field"><label for="editTitle">Title</label><input id="editTitle" type="text"></div>
+        <div class="field"><label for="editOrg">Organization</label><input id="editOrg" type="text"></div>
+        <div class="field"><label for="editRole">Role</label><input id="editRole" type="text"></div>
+        <div class="field"><label for="editPeriod">Period</label><input id="editPeriod" type="text"></div>
+        <div class="field"><label for="editStatus">Status</label><input id="editStatus" type="text"></div>
+        <div class="field"><label for="editOneLine">One-line</label><input id="editOneLine" type="text"></div>
+        <div class="field"><label for="editBody">Body (markdown)</label><textarea id="editBody"></textarea></div>
+      </div>
     </div>
     <div class="m-foot">
       <button class="danger" id="btnDeleteEntry">Delete</button>
+      <button id="btnEditEntry">Edit</button>
       <button id="btnCopyEntry">Copy markdown</button>
+      <button data-close class="primary" id="btnCloseEntry">Close</button>
+      <button id="btnCancelEdit" style="display:none">Cancel</button>
+      <button class="primary" id="btnSaveEdit" style="display:none">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- HELP -->
+<div class="overlay" id="helpOverlay">
+  <div class="modal">
+    <div class="m-head"><h3>How this works</h3><button class="quiet" data-close>&#10005;</button></div>
+    <div class="m-body" id="helpBody">
+      <h3>The Bank (home)</h3>
+      <p>Everything the Adviser knows about you, in two kinds. <strong>Stories &amp; evidence</strong> are things that happened: captured stories, reusable interview answers, debriefs, prep packs, and session reviews. <strong>Doctrine</strong> is how you work: principles, playbooks, lessons, and logged decisions. Search covers titles, tags, and full text; tap the tag chips to filter; tap any card to read it, and from there Edit, retag, copy, or delete.</p>
+
+      <h3>Capture</h3>
+      <p>An interview about your past work. The Adviser proposes what to capture next from your story backlog and coverage gaps, then digs for the texture polished versions leave out: the people, the decisions, the numbers, the uncomfortable bit. Ends with a story entry saved to the bank.</p>
+
+      <h3>Codify</h3>
+      <p>The same interview pointed at your methods instead of your past. Produces doctrine: a principle, a playbook, a lesson, or a decision-journal entry. Doctrine is what Challenge mode thinks with, so every Codify session makes the Adviser more you. The eleven seeded entries are drafts; refining them here is how they become yours.</p>
+
+      <h3>Challenge</h3>
+      <p>Bring live work: a brief, a plan, a draft, an interview answer, a negotiation. The Adviser pressure-tests it one question at a time, armed with your own doctrine, citing your own playbooks when your thinking drifts from them. Ends with a written review: strengths, gaps, unresolved decisions, and danger zones.</p>
+
+      <h3>Prep</h3>
+      <p>Paste a job description or describe a room you are walking into. The Adviser reads your entire bank, decodes the audience, maps your stories to the likely questions, interviews you to fill the critical gaps, and writes the full prep pack.</p>
+
+      <h3>Finish &amp; write up</h3>
+      <p>End every session with this button. The written artifact is the point of the session; one without it is unfinished. Save it to the bank, or copy and download it as markdown.</p>
+
+      <h3>Tags</h3>
+      <p>The retrieval system. Add new tags, rename one (updates every entry that uses it), or retire it from the suggestion list. A specific entry's tags are edited inside its viewer.</p>
+
+      <h3>Export all</h3>
+      <p>Downloads the entire bank as a single markdown file. Do this after any session that adds something important; career evidence should never live in only one place.</p>
+
+      <h3>Settings</h3>
+      <p>Your keys, stored only in this browser and entered once per device: the Supabase URL and anon key (the database), your Anthropic API key (the intelligence; a session costs cents), and the model. Sign out lives here too.</p>
+
+      <p class="hint">Practical notes: an unfinished conversation shows as "Resume session" on the Bank screen. Sign-in lasts until you sign out on that device. If the database sits unused for a week or more, Supabase may pause it on the free plan; waking it is one click in their dashboard, and your Export all copies make even the worst case boring.</p>
+    </div>
+    <div class="m-foot">
       <button data-close class="primary">Close</button>
     </div>
   </div>
@@ -645,9 +709,20 @@ function renderBank(){
 
 /* ================= Entry viewer ================= */
 
+function setEntryMode(editing){
+  el("entryView").style.display = editing ? "none" : "";
+  el("entryEdit").style.display = editing ? "" : "none";
+  ["btnEditEntry","btnDeleteEntry","btnCopyEntry","btnCloseEntry"].forEach(function(id){
+    el(id).style.display = editing ? "none" : "";
+  });
+  el("btnSaveEdit").style.display = editing ? "" : "none";
+  el("btnCancelEdit").style.display = editing ? "" : "none";
+}
+
 function openEntry(s){
   currentEntry = s;
   editTags = (s.tags || []).slice();
+  setEntryMode(false);
   el("entryTitle").textContent = s.title;
   var bits = [];
   if(s.kind) bits.push(s.kind.toUpperCase());
@@ -672,6 +747,39 @@ function openEntry(s){
       el("entryOverlay").classList.remove("open");
       loadAll();
     });
+  };
+  el("btnEditEntry").onclick = function(){
+    el("editTitle").value = s.title || "";
+    el("editOrg").value = s.organization || "";
+    el("editRole").value = s.role || "";
+    el("editPeriod").value = s.period || "";
+    el("editStatus").value = s.status || "";
+    el("editOneLine").value = s.one_line || "";
+    el("editBody").value = s.body || "";
+    setEntryMode(true);
+  };
+  el("btnCancelEdit").onclick = function(){ setEntryMode(false); };
+  el("btnSaveEdit").onclick = function(){
+    var title = el("editTitle").value.trim();
+    if(!title){ toast("The title can't be empty."); return; }
+    var patch = {
+      title: title,
+      organization: el("editOrg").value.trim() || null,
+      role: el("editRole").value.trim() || null,
+      period: el("editPeriod").value.trim() || null,
+      status: el("editStatus").value.trim() || null,
+      one_line: el("editOneLine").value.trim() || null,
+      body: el("editBody").value,
+      updated_at: new Date().toISOString()
+    };
+    el("btnSaveEdit").disabled = true;
+    db.from("entries").update(patch).eq("id", s.id).then(function(r){
+      if(r.error){ toast(r.error.message); return; }
+      Object.keys(patch).forEach(function(k){ s[k] = patch[k]; });
+      toast("Saved.", true);
+      openEntry(s);
+      loadAll();
+    }).finally(function(){ el("btnSaveEdit").disabled = false; });
   };
 }
 
@@ -818,6 +926,8 @@ function show(view){
   var badge = el("modeBadge");
   if(view === "chat" && state.mode){ badge.style.display = "inline-block"; badge.textContent = MODES[state.mode].label; }
   else badge.style.display = "none";
+  var res = el("btnResume");
+  if(res) res.style.display = (view === "bank" && state.mode && state.messages.length) ? "" : "none";
 }
 
 function renderChat(){
@@ -1143,6 +1253,8 @@ document.addEventListener("DOMContentLoaded", function(){
   }
 
   el("btnBank").addEventListener("click", function(){ show("bank"); renderBank(); });
+  el("brand").addEventListener("click", function(){ show("bank"); renderBank(); });
+  el("btnHelp").addEventListener("click", function(){ el("helpOverlay").classList.add("open"); });
   el("btnSend").addEventListener("click", send);
   el("input").addEventListener("keydown", function(e){
     if(e.key === "Enter" && !e.shiftKey && !e.isComposing){ e.preventDefault(); send(); }
@@ -1198,8 +1310,12 @@ document.addEventListener("DOMContentLoaded", function(){
     closers[j].addEventListener("click", function(){ this.closest(".overlay").classList.remove("open"); });
   }
 
-  if(state.mode && state.messages.length){ renderChat(); show("chat"); }
-  else show("bank");
+  el("btnResume").addEventListener("click", function(){
+    if(state.mode && state.messages.length){ renderChat(); show("chat"); el("input").focus(); }
+  });
+
+  // Always open on the Bank screen; an unfinished session is offered, never forced.
+  show("bank");
 
   if(initDb()){
     db.auth.getSession().then(function(r){
