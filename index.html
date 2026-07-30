@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The Adviser</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root{
     --bg:#f6f5f1; --panel:#ffffff; --ink:#1d2733; --ink-soft:#5b6773;
@@ -177,6 +178,33 @@
   }
   #entryBody h3{font-size:14.5px; margin:16px 0 4px}
   #entryBody blockquote{margin:.5em 0; padding:2px 12px; border-left:3px solid var(--accent); color:var(--ink-soft)}
+  /* Reader: reading always happens on paper, whatever the app theme */
+  .reader-toolbar{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap}
+  .paper{
+    background:#faf8f2; color:#212a33; border:1px solid #e7e2d4; border-radius:16px;
+    padding:40px 44px; box-shadow:0 2px 14px rgba(0,0,0,.07);
+  }
+  @media(max-width:600px){.paper{padding:26px 20px}}
+  .paper .r-kind{font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#8a939c; margin-bottom:10px}
+  .paper .r-title{font-family:ui-serif,Georgia,'Iowan Old Style','Times New Roman',serif; font-size:30px; line-height:1.2; margin:0 0 10px; font-weight:700; color:#1b232c}
+  .paper .r-meta{font-size:13px; color:#6b7681; margin-bottom:4px}
+  .paper .r-tags{margin:12px 0 4px; display:flex; flex-wrap:wrap; gap:6px}
+  .paper .r-tags .chip{cursor:default; background:#efece2; border-color:#e3ded0; color:#6b7681}
+  .paper .r-lede{font-family:ui-serif,Georgia,serif; font-style:italic; font-size:19px; line-height:1.5; color:#3d4854; border-left:3px solid var(--accent); padding-left:14px; margin:20px 0 26px}
+  .paper .r-body{font-family:ui-serif,Georgia,'Iowan Old Style','Times New Roman',serif; font-size:17.5px; line-height:1.68; max-width:62ch; color:#212a33}
+  .paper .r-body p{margin:0 0 14px}
+  .paper .r-body h1, .paper .r-body h2{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    font-size:13.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+    color:#0f5d5a; margin:30px 0 10px; padding-bottom:6px; border-bottom:1px solid #e7e2d4;
+  }
+  .paper .r-body h3, .paper .r-body h4{font-size:18px; font-style:italic; margin:20px 0 6px; font-weight:600; color:#1b232c}
+  .paper .r-body ul{margin:0 0 14px; padding-left:1.25em}
+  .paper .r-body li{margin-bottom:7px}
+  .paper .r-body blockquote{margin:16px 0; padding:4px 16px; border-left:3px solid var(--accent); color:#414c58; font-style:italic}
+  .paper .r-body strong{color:#10161d}
+  .paper .r-body code{background:#efece2; color:#212a33}
+  #artifactPretty{padding:26px 30px}
   #editBody{
     width:100%; min-height:320px; resize:vertical; font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
     color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:12px; max-height:none;
@@ -231,6 +259,24 @@
         <div id="storyList"></div>
         <div class="empty" id="bankEmpty" style="display:none"></div>
       </div>
+    </div>
+
+    <!-- READER -->
+    <div id="readerView" style="display:none">
+      <div class="reader-toolbar">
+        <button id="btnReaderEdit">Edit</button>
+        <button id="btnReaderPdf">Export PDF</button>
+        <button id="btnReaderCopy">Copy markdown</button>
+        <button class="danger" id="btnReaderDelete">Delete</button>
+      </div>
+      <article class="paper">
+        <div class="r-kind" id="rKind"></div>
+        <h1 class="r-title" id="rTitle"></h1>
+        <div class="r-meta" id="rMeta"></div>
+        <div class="r-tags" id="rTags"></div>
+        <div class="r-lede" id="rLede" style="display:none"></div>
+        <div class="r-body" id="rBody"></div>
+      </article>
     </div>
 
     <!-- MODE PICK -->
@@ -311,9 +357,11 @@
   <div class="modal">
     <div class="m-head"><h3 id="artifactTitle">Session artifact</h3><button class="quiet" data-close>&#10005;</button></div>
     <div class="m-body">
-      <div id="artifactText"></div>
+      <div id="artifactPretty" class="paper"><div class="r-body" id="artifactPrettyBody"></div></div>
+      <div id="artifactText" style="display:none"></div>
     </div>
     <div class="m-foot">
+      <button class="quiet" id="btnRawArtifact">View raw</button>
       <button id="btnCopyArtifact">Copy</button>
       <button id="btnDownloadArtifact">Download .md</button>
       <button class="primary" id="btnSaveArtifact">Save to bank</button>
@@ -329,10 +377,10 @@
       <div id="entryView">
         <div id="entryMeta" class="entry-meta"></div>
         <div id="entryLede" class="entry-lede" style="display:none"></div>
-        <div id="tagEditor"></div>
         <div id="entryBody"></div>
       </div>
       <div id="entryEdit" style="display:none">
+        <div id="tagEditorSlot"></div>
         <div class="field"><label for="editTitle">Title</label><input id="editTitle" type="text"></div>
         <div class="field"><label for="editOrg">Organization</label><input id="editOrg" type="text"></div>
         <div class="field"><label for="editRole">Role</label><input id="editRole" type="text"></div>
@@ -694,7 +742,7 @@ function renderBank(){
       "<div class='t'><span class='kind'>" + esc(s.kind) + "</span>" + esc(s.title) + "</div>" +
       (s.one_line ? "<div class='o'>" + esc(s.one_line) + "</div>" : "") +
       "<div class='m'>" + esc(metaBits.join(" · ")) + ((s.tags && s.tags.length) ? " · " + esc(s.tags.slice(0,4).join(", ")) : "") + "</div>";
-    b.addEventListener("click", function(){ openEntry(s); });
+    b.addEventListener("click", function(){ openReader(s); });
     list.appendChild(b);
   });
 
@@ -708,6 +756,37 @@ function renderBank(){
 }
 
 /* ================= Entry viewer ================= */
+
+function populateReader(s){
+  el("rKind").textContent = s.kind || "";
+  el("rTitle").textContent = s.title || "";
+  var bits = [];
+  if(s.organization) bits.push(s.organization);
+  if(s.role) bits.push(s.role);
+  if(s.period) bits.push(s.period);
+  var d = s.updated_at ? new Date(s.updated_at).toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}) : "";
+  if(d) bits.push("updated " + d);
+  el("rMeta").textContent = bits.join("  ·  ") + (s.status ? "   —   " + s.status : "");
+  var tg = el("rTags");
+  tg.innerHTML = "";
+  (s.tags||[]).forEach(function(t){
+    var c = document.createElement("span");
+    c.className = "chip";
+    c.textContent = t;
+    tg.appendChild(c);
+  });
+  var lede = el("rLede");
+  if(s.one_line){ lede.textContent = s.one_line; lede.style.display = ""; }
+  else lede.style.display = "none";
+  el("rBody").innerHTML = md(s.body || "");
+}
+
+function openReader(s){
+  currentEntry = s;
+  populateReader(s);
+  show("reader");
+  el("main").scrollTop = 0;
+}
 
 function setEntryMode(editing){
   el("entryView").style.display = editing ? "none" : "";
@@ -777,7 +856,8 @@ function openEntry(s){
       if(r.error){ toast(r.error.message); return; }
       Object.keys(patch).forEach(function(k){ s[k] = patch[k]; });
       toast("Saved.", true);
-      openEntry(s);
+      populateReader(s);
+      el("entryOverlay").classList.remove("open");
       loadAll();
     }).finally(function(){ el("btnSaveEdit").disabled = false; });
   };
@@ -795,7 +875,7 @@ function entryMarkdown(s){
 }
 
 function renderTagEditor(){
-  var host = el("tagEditor");
+  var host = el("tagEditorSlot");
   host.innerHTML = "";
   var row = document.createElement("div");
   row.className = "tagedit";
@@ -835,6 +915,7 @@ function renderTagEditor(){
       if(r.error){ toast(r.error.message); return; }
       currentEntry.tags = editTags.slice();
       toast("Tags saved.", true);
+      populateReader(currentEntry);
       loadAll();
     });
   });
@@ -918,6 +999,7 @@ function exportAll(){
 function show(view){
   state.view = view;
   el("bankView").style.display = view === "bank" ? "" : "none";
+  el("readerView").style.display = view === "reader" ? "" : "none";
   el("setupView").style.display = view === "setup" ? "" : "none";
   el("chatView").style.display = view === "chat" ? "" : "none";
   el("composer").style.display = view === "chat" ? "" : "none";
@@ -1147,14 +1229,21 @@ function generateArtifact(){
   el("thinking").style.display = "";
   var msgs = apiMessages().concat([{ role: "user", content: asks[state.mode] }]);
   var box = el("artifactText");
+  var pretty = el("artifactPrettyBody");
   box.textContent = "";
+  pretty.innerHTML = "";
+  el("artifactPretty").style.display = "";
+  el("artifactText").style.display = "none";
+  el("btnRawArtifact").textContent = "View raw";
   el("artifactTitle").textContent = titles[state.mode];
   el("artifactOverlay").classList.add("open");
   callClaude(msgs, 8192, function(sofar){
     el("thinking").style.display = "none";
     box.textContent = sofar;
+    pretty.innerHTML = md(sofar);
   }).then(function(full){
     box.textContent = full;
+    pretty.innerHTML = md(full);
     lastArtifact = full;
   }).catch(function(err){
     el("artifactOverlay").classList.remove("open");
@@ -1217,6 +1306,164 @@ function saveArtifact(){
   }).finally(function(){ el("btnSaveArtifact").disabled = false; });
 }
 
+/* ================= PDF export ================= */
+
+function pdfPlain(t){
+  return t.replace(/\*\*([^*]+)\*\*/g,"$1").replace(/(^|[^*])\*([^*]+)\*/g,"$1$2").replace(/`([^`]+)`/g,"$1");
+}
+function parseBlocks(text){
+  var lines = text.split("\n"), blocks = [], para = [];
+  function flush(){ if(para.length){ blocks.push({ t:"p", s: pdfPlain(para.join(" ")) }); para = []; } }
+  for(var i=0;i<lines.length;i++){
+    var ln = lines[i];
+    var h = ln.match(/^(#{1,4})\s+(.*)$/);
+    var li = ln.match(/^\s*[-*]\s+(.*)$/);
+    var bq = ln.match(/^>\s?(.*)$/);
+    if(h){ flush(); blocks.push({ t: h[1].length <= 2 ? "h2" : "h3", s: pdfPlain(h[2]) }); }
+    else if(li){ flush(); blocks.push({ t:"li", s: pdfPlain(li[1]) }); }
+    else if(bq){ flush(); blocks.push({ t:"q", s: pdfPlain(bq[1]) }); }
+    else if(ln.trim()===""){ flush(); }
+    else para.push(ln.trim());
+  }
+  flush();
+  return blocks;
+}
+
+function exportEntryPdf(s){
+  if(!(window.jspdf && window.jspdf.jsPDF)){ toast("PDF library didn't load; check your connection and refresh."); return; }
+  try{
+    var doc = new window.jspdf.jsPDF({ unit: "pt", format: "letter" });
+    var W = 612, H = 792, M = 68, bottom = H - 76;
+    var ACCENT = [15, 93, 90], INK = [30, 38, 48], SOFT = [105, 115, 125];
+    var footTitle = s.title;
+
+    function footer(pageNo){
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(140,140,140);
+      doc.text(footTitle, M, H - 40);
+      doc.text(String(pageNo), W - M, H - 40, { align: "right" });
+    }
+
+    /* Page 1: title page */
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(ACCENT[0],ACCENT[1],ACCENT[2]);
+    doc.text((s.kind || "entry").toUpperCase(), M, 150, { charSpace: 2 });
+    doc.setFontSize(27); doc.setTextColor(INK[0],INK[1],INK[2]);
+    var titleLines = doc.splitTextToSize(s.title, W - 2*M);
+    doc.text(titleLines, M, 185);
+    var y = 185 + titleLines.length * 32 + 8;
+    if(s.one_line){
+      doc.setFont("times", "italic"); doc.setFontSize(13.5); doc.setTextColor(70,80,90);
+      var ledeLines = doc.splitTextToSize(s.one_line, W - 2*M - 20);
+      doc.setDrawColor(ACCENT[0],ACCENT[1],ACCENT[2]); doc.setLineWidth(2);
+      doc.line(M, y - 12, M, y + ledeLines.length * 18 - 6);
+      doc.text(ledeLines, M + 14, y);
+      y += ledeLines.length * 18 + 18;
+    }
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(SOFT[0],SOFT[1],SOFT[2]);
+    var metaBits = [];
+    if(s.organization) metaBits.push(s.organization);
+    if(s.role) metaBits.push(s.role);
+    if(s.period) metaBits.push(s.period);
+    if(metaBits.length){ doc.text(metaBits.join("  ·  "), M, y); y += 16; }
+    if(s.status){ doc.text(s.status, M, y); y += 16; }
+    if(s.tags && s.tags.length){ doc.text("Tags: " + s.tags.join(", "), M, y); y += 16; }
+    doc.text("Exported " + new Date().toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"}) + " from The Adviser", M, H - 100);
+
+    /* Page 2: contents placeholder; content starts page 3 */
+    doc.addPage();
+    doc.addPage();
+    var page = 3;
+    y = M + 10;
+    var sections = [];
+    var blocks = parseBlocks(s.body || "");
+
+    function newPage(){ footer(page); doc.addPage(); page++; y = M + 10; }
+    function need(h){ if(y + h > bottom) newPage(); }
+
+    for(var i=0;i<blocks.length;i++){
+      var b = blocks[i];
+      if(b.t === "h2"){
+        need(90);
+        y += 22;
+        sections.push({ title: b.s, page: page, y: y });
+        doc.setFont("helvetica", "bold"); doc.setFontSize(10.5); doc.setTextColor(ACCENT[0],ACCENT[1],ACCENT[2]);
+        doc.text(b.s.toUpperCase(), M, y, { charSpace: 1 });
+        y += 7;
+        doc.setDrawColor(225, 220, 208); doc.setLineWidth(0.75);
+        doc.line(M, y, W - M, y);
+        y += 20;
+      } else if(b.t === "h3"){
+        need(60);
+        y += 10;
+        doc.setFont("times", "bolditalic"); doc.setFontSize(12.5); doc.setTextColor(INK[0],INK[1],INK[2]);
+        doc.text(doc.splitTextToSize(b.s, W - 2*M), M, y);
+        y += 20;
+      } else if(b.t === "li"){
+        doc.setFont("times", "normal"); doc.setFontSize(11.5); doc.setTextColor(INK[0],INK[1],INK[2]);
+        var liLines = doc.splitTextToSize(b.s, W - 2*M - 18);
+        need(liLines.length * 16 + 4);
+        doc.text("•", M + 2, y);
+        doc.text(liLines, M + 18, y);
+        y += liLines.length * 16 + 4;
+      } else if(b.t === "q"){
+        doc.setFont("times", "italic"); doc.setFontSize(11.5); doc.setTextColor(70,80,90);
+        var qLines = doc.splitTextToSize(b.s, W - 2*M - 26);
+        need(qLines.length * 16 + 10);
+        doc.setDrawColor(ACCENT[0],ACCENT[1],ACCENT[2]); doc.setLineWidth(1.5);
+        doc.line(M + 2, y - 10, M + 2, y + qLines.length * 16 - 14);
+        doc.text(qLines, M + 16, y);
+        y += qLines.length * 16 + 8;
+      } else {
+        doc.setFont("times", "normal"); doc.setFontSize(11.5); doc.setTextColor(INK[0],INK[1],INK[2]);
+        var pLines = doc.splitTextToSize(b.s, W - 2*M);
+        need(Math.min(pLines.length, 3) * 16.5);
+        for(var j=0;j<pLines.length;j++){
+          if(y > bottom) newPage();
+          doc.text(pLines[j], M, y);
+          y += 16.5;
+        }
+        y += 7;
+      }
+    }
+    footer(page);
+
+    /* Back to page 2: the contents */
+    doc.setPage(2);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(15); doc.setTextColor(INK[0],INK[1],INK[2]);
+    doc.text("Contents", M, M + 30);
+    var ty = M + 62;
+    doc.setFontSize(11);
+    var maxToc = 30;
+    for(var k=0;k<sections.length && k<maxToc;k++){
+      var sec = sections[k];
+      doc.setFont("helvetica", "normal"); doc.setTextColor(INK[0],INK[1],INK[2]);
+      var label = doc.splitTextToSize(sec.title, W - 2*M - 40)[0];
+      doc.text(label, M, ty);
+      doc.setTextColor(SOFT[0],SOFT[1],SOFT[2]);
+      doc.text(String(sec.page), W - M, ty, { align: "right" });
+      try{ doc.link(M, ty - 11, W - 2*M, 14, { pageNumber: sec.page, top: Math.max(0, sec.y - 40) }); }catch(e){}
+      ty += 22;
+    }
+    if(sections.length > maxToc){
+      doc.setFont("helvetica", "italic"); doc.setTextColor(SOFT[0],SOFT[1],SOFT[2]);
+      doc.text("…and " + (sections.length - maxToc) + " more sections", M, ty);
+    }
+
+    /* Outline bookmarks (the sidebar in GoodNotes, Preview, Acrobat) */
+    try{
+      if(doc.outline && doc.outline.add){
+        for(var o=0;o<sections.length;o++){
+          doc.outline.add(null, sections[o].title, { pageNumber: sections[o].page });
+        }
+      }
+    }catch(e){}
+
+    doc.save(s.title.replace(/[\\/:*?"<>|]/g, "") + ".pdf");
+    toast("PDF exported.", true);
+  }catch(err){
+    toast("PDF export failed: " + (err.message || "unknown error"));
+  }
+}
+
 /* ================= Settings ================= */
 
 function openSettings(){
@@ -1255,6 +1502,33 @@ document.addEventListener("DOMContentLoaded", function(){
   el("btnBank").addEventListener("click", function(){ show("bank"); renderBank(); });
   el("brand").addEventListener("click", function(){ show("bank"); renderBank(); });
   el("btnHelp").addEventListener("click", function(){ el("helpOverlay").classList.add("open"); });
+
+  el("btnReaderEdit").addEventListener("click", function(){
+    if(!currentEntry) return;
+    openEntry(currentEntry);
+    el("btnEditEntry").click();
+  });
+  el("btnReaderCopy").addEventListener("click", function(){
+    if(currentEntry && navigator.clipboard) navigator.clipboard.writeText(entryMarkdown(currentEntry)).then(function(){ toast("Copied.", true); });
+  });
+  el("btnReaderPdf").addEventListener("click", function(){ if(currentEntry) exportEntryPdf(currentEntry); });
+  el("btnReaderDelete").addEventListener("click", function(){
+    if(!currentEntry) return;
+    if(!confirm("Delete '" + currentEntry.title + "' from the bank? This cannot be undone.")) return;
+    db.from("entries").delete().eq("id", currentEntry.id).then(function(r){
+      if(r.error){ toast(r.error.message); return; }
+      toast("Deleted.", true);
+      show("bank");
+      loadAll();
+    });
+  });
+  el("btnRawArtifact").addEventListener("click", function(){
+    var raw = el("artifactText"), pretty = el("artifactPretty");
+    var showingRaw = raw.style.display !== "none";
+    raw.style.display = showingRaw ? "none" : "";
+    pretty.style.display = showingRaw ? "" : "none";
+    this.textContent = showingRaw ? "View raw" : "View formatted";
+  });
   el("btnSend").addEventListener("click", send);
   el("input").addEventListener("keydown", function(e){
     if(e.key === "Enter" && !e.shiftKey && !e.isComposing){ e.preventDefault(); send(); }
