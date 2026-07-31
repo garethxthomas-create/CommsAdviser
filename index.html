@@ -212,6 +212,15 @@
   .paper .r-body strong{color:#10161d}
   .paper .r-body code{background:#efece2; color:#212a33}
   #artifactPretty{padding:26px 30px}
+  .cuecard{
+    background:#edf4f2; border:1px solid #d2e2de; border-radius:12px;
+    padding:14px 18px; margin:18px 0; color:#243039;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; font-size:14.5px; line-height:1.55;
+  }
+  .cuecard .cc-h{font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#0f5d5a; margin-bottom:8px}
+  .cuecard p{margin:.3em 0}
+  .cuecard ul{margin:.3em 0; padding-left:1.2em}
+  .cuecard li{margin-bottom:4px}
   #editBody{
     width:100%; min-height:320px; resize:vertical; font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
     color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:12px; max-height:none;
@@ -275,6 +284,7 @@
         <button id="btnReaderEdit">Edit</button>
         <button id="btnReaderPdf">Export PDF</button>
         <button id="btnReaderFile" style="display:none">Original file</button>
+        <button id="btnReaderSource" style="display:none">Source</button>
         <button id="btnReaderCopy">Copy markdown</button>
         <button id="btnReaderArchive">Archive</button>
         <button class="danger" id="btnReaderDelete">Delete</button>
@@ -285,6 +295,7 @@
         <div class="r-meta" id="rMeta"></div>
         <div class="r-tags" id="rTags"></div>
         <div class="r-lede" id="rLede" style="display:none"></div>
+        <div class="cuecard" id="rCue" style="display:none"></div>
         <div class="r-body" id="rBody"></div>
       </article>
     </div>
@@ -397,6 +408,8 @@
         <div class="field"><label for="editPeriod">Period</label><input id="editPeriod" type="text"></div>
         <div class="field"><label for="editStatus">Status</label><input id="editStatus" type="text"></div>
         <div class="field"><label for="editOneLine">One-line</label><input id="editOneLine" type="text"></div>
+        <div class="field"><label for="editSource">Source link</label><input id="editSource" type="url" placeholder="https://&hellip;"></div>
+        <div class="field"><label for="editCue">Cue card (short lines, for glancing)</label><textarea id="editCue" style="width:100%; min-height:120px; max-height:none; resize:vertical; font-family:inherit; font-size:13.5px; line-height:1.5; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px"></textarea></div>
         <div class="field"><label for="editBody">Body (markdown)</label><textarea id="editBody"></textarea></div>
       </div>
     </div>
@@ -417,10 +430,10 @@
     <div class="m-head"><h3>How this works</h3><button class="quiet" data-close>&#10005;</button></div>
     <div class="m-body" id="helpBody">
       <h3>The Bank (home)</h3>
-      <p>Everything the Adviser knows about you, grouped in collapsible sections: <strong>Stories &amp; evidence</strong> (what happened), <strong>Doctrine</strong> (how you work), <strong>Clippings</strong> (imported material), and <strong>Working documents</strong> (prep packs, reviews, debriefs). A Recent row appears once the bank is big enough to need one. Search covers titles, tags, and full text, and searching flattens everything, archived included, into one result list. The tag row shows your ten most-used tags; the rest sit behind the expander. Tap any card to read it.</p>
+      <p>Everything the Adviser knows about you, grouped in collapsible sections: <strong>Stories &amp; evidence</strong> (what happened), <strong>Doctrine</strong> (how you work), <strong>Library</strong> (imported clippings and research), and <strong>Working documents</strong> (prep packs, reviews, debriefs). A Recent row appears once the bank is big enough to need one. Search covers titles, tags, and full text, and searching flattens everything, archived included, into one result list. The tag row shows your ten most-used tags; the rest sit behind the expander. Tap any card to read it.</p>
 
       <h3>Capture</h3>
-      <p>An interview about your past work. The Adviser proposes what to capture next from your story backlog and coverage gaps, then digs for the texture polished versions leave out: the people, the decisions, the numbers, the uncomfortable bit. Ends with a story entry saved to the bank.</p>
+      <p>An interview about your past work. The Adviser proposes what to capture next from your story backlog and coverage gaps, then digs for the texture polished versions leave out: the people, the decisions, the numbers, the uncomfortable bit. Ends with a story entry saved to the bank, complete with a cue card: a glanceable quick-reference shown at the top of the entry and included in PDF exports. Cue cards are editable on any entry, so cards you already have can be pasted straight in.</p>
 
       <h3>Codify</h3>
       <p>The same interview pointed at your methods instead of your past. Produces doctrine: a principle, a playbook, a lesson, or a decision-journal entry. Doctrine is what Challenge mode thinks with, so every Codify session makes the Adviser more you. The eleven seeded entries are drafts; refining them here is how they become yours.</p>
@@ -431,8 +444,8 @@
       <h3>Prep</h3>
       <p>Paste a job description or describe a room you are walking into. The Adviser reads your entire bank, decodes the audience, maps your stories to the likely questions, interviews you to fill the critical gaps, and writes the full prep pack.</p>
 
-      <h3>Import</h3>
-      <p>Feed the bank from outside: a LinkedIn screenshot, a useful diagram, a PDF. The Adviser reads the file, extracts the substance faithfully (frameworks, stats, quotes), tags it, and saves it as a clipping. Add a note about where it came from and why you kept it; that context sharpens the extraction. Optionally store the original file too; the "Original file" button in the reader opens it. Clippings join the material Prep and Challenge sessions can draw on.</p>
+      <h3>Import (the Library)</h3>
+      <p>Feed the bank from outside, two ways. <strong>File</strong>: a screenshot, image, or PDF; the Adviser reads it and extracts the substance faithfully. <strong>Text or transcript</strong>: paste anything, an article, an email, a YouTube transcript (tap "Show transcript" under any video and copy), or drop in a Teams/Zoom transcript file. Save as a <strong>clipping</strong> (a caught moment) or as <strong>research</strong> (a substantive source, which gets deeper extraction: findings with exact numbers, methodology caveats, quotable lines). Add the source link so every entry can point home; the reader gets a Source button. Everything lands in the Library section and feeds Prep and Challenge sessions.</p>
 
       <h3>Finish &amp; write up</h3>
       <p>End every session with this button. The written artifact is the point of the session; one without it is unfinished. Save it to the bank, or copy and download it as markdown.</p>
@@ -463,20 +476,46 @@
 <!-- IMPORT -->
 <div class="overlay" id="importOverlay">
   <div class="modal">
-    <div class="m-head"><h3>Import a file</h3><button class="quiet" data-close>&#10005;</button></div>
+    <div class="m-head"><h3>Import</h3><button class="quiet" data-close>&#10005;</button></div>
     <div class="m-body">
       <div class="field">
-        <label for="importFile">Screenshot, image, or PDF</label>
-        <input id="importFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf">
-        <div class="hint">The Adviser reads it, extracts the substance, and saves it as a tagged clipping. Images up to 5MB, PDFs up to 15MB.</div>
+        <div class="tagrow" style="margin:0">
+          <span class="chip on" id="impTabFile">File (image or PDF)</span>
+          <span class="chip" id="impTabText">Text or transcript</span>
+        </div>
+      </div>
+      <div id="impFileWrap">
+        <div class="field">
+          <label for="importFile">Screenshot, image, or PDF</label>
+          <input id="importFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf">
+          <div class="hint">Images up to 5MB, PDFs up to 15MB.</div>
+        </div>
+        <div class="field">
+          <label><input id="importKeep" type="checkbox" checked style="width:auto; margin-right:6px">Store the original file too</label>
+          <div class="hint">Originals live in your database's private storage (about 1GB free). Untick for big files you already keep elsewhere.</div>
+        </div>
+      </div>
+      <div id="impTextWrap" style="display:none">
+        <div class="field">
+          <label for="importText">Paste the text, transcript, or email</label>
+          <textarea id="importText" style="width:100%; min-height:180px; max-height:none; resize:vertical; font-family:inherit; font-size:13.5px; line-height:1.5; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px"></textarea>
+          <div class="hint" style="margin-top:6px">Or pick a transcript file: <input id="importTextFile" type="file" accept=".txt,.vtt,.srt,.md,text/plain"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="importKind">Save as</label>
+        <select id="importKind" style="font:inherit; padding:8px 10px; border-radius:10px; border:1px solid var(--line); background:var(--bg); color:var(--ink); width:100%">
+          <option value="clipping">Clipping — a caught moment: screenshot, post, idea</option>
+          <option value="research">Research — a substantive source: study, report, talk</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="importSource">Source link (optional)</label>
+        <input id="importSource" type="url" placeholder="https://&hellip; the video, article, or message it came from">
       </div>
       <div class="field">
         <label for="importNote">Note (optional but valuable)</label>
         <input id="importNote" type="text" placeholder="Where it's from, why you kept it&hellip;">
-      </div>
-      <div class="field">
-        <label><input id="importKeep" type="checkbox" checked style="width:auto; margin-right:6px">Store the original file too</label>
-        <div class="hint">Originals live in your database's private storage (about 1GB free). Untick for big files you already keep elsewhere.</div>
       </div>
       <div class="hint" id="importStatus"></div>
     </div>
@@ -571,7 +610,7 @@ var MODES = {
 "",
 "Capture is archaeology, not cross-examination. Dig persistently, but let him tell it.",
 "",
-"When asked to produce the final artifact, write a complete markdown story entry with this structure exactly: line 1 is '# ' plus the title. Then a metadata block with one item per line: 'Organization: ...', 'Role: ...', 'Period: ...', 'Status: captured [today's date], refinement pending', 'Competency tags: tag1, tag2, ...' (prefer tags from the taxonomy below, coin new ones only when the material genuinely needs it), 'One-line: ...' (a single-sentence version of the story). Then the sections: The full story; Evidence and numbers; Danger zones when telling this story; Interview cuts (a 30-second spoken cut and a 90-second spoken cut, plus targeted cuts for likely question types); Open items for next capture session."
+"When asked to produce the final artifact, write a complete markdown story entry with this structure exactly: line 1 is '# ' plus the title. Then a metadata block with one item per line: 'Organization: ...', 'Role: ...', 'Period: ...', 'Status: captured [today's date], refinement pending', 'Competency tags: tag1, tag2, ...' (prefer tags from the taxonomy below, coin new ones only when the material genuinely needs it), 'One-line: ...' (a single-sentence version of the story). Then the sections: The full story; Evidence and numbers; Danger zones when telling this story; Interview cuts (a 30-second spoken cut and a 90-second spoken cut, plus targeted cuts for likely question types); Cue card (a compact quick-reference for glancing at before an interview: five to eight short lines written as prompts to the eye rather than prose: the hook, the story beats each with its number, the landing line); Open items for next capture session."
     ].join("\n")
   },
   challenge: {
@@ -626,14 +665,14 @@ function isKnowledge(s){ return KNOWLEDGE_KINDS.indexOf(s.kind) !== -1; }
 function family(s){
   if(s.archived) return "archived";
   if(isKnowledge(s)) return "doctrine";
-  if(s.kind === "clipping") return "clippings";
+  if(s.kind === "clipping" || s.kind === "research") return "clippings";
   if(s.kind === "story" || s.kind === "answer") return "evidence";
   return "working";
 }
 var FAMILIES = [
   { key:"evidence", label:"Stories & evidence" },
   { key:"doctrine", label:"Doctrine" },
-  { key:"clippings", label:"Clippings" },
+  { key:"clippings", label:"Library" },
   { key:"working", label:"Working documents" },
   { key:"archived", label:"Archived" }
 ];
@@ -935,9 +974,13 @@ function populateReader(s){
   var lede = el("rLede");
   if(s.one_line){ lede.textContent = s.one_line; lede.style.display = ""; }
   else lede.style.display = "none";
+  var cue = el("rCue");
+  if(s.cue_card){ cue.innerHTML = "<div class='cc-h'>Cue card</div>" + md(s.cue_card); cue.style.display = ""; }
+  else cue.style.display = "none";
   el("rBody").innerHTML = md(s.body || "");
   el("btnReaderArchive").textContent = s.archived ? "Unarchive" : "Archive";
   el("btnReaderFile").style.display = s.attachment ? "" : "none";
+  el("btnReaderSource").style.display = s.source_url ? "" : "none";
 }
 
 function openReader(s){
@@ -993,6 +1036,8 @@ function openEntry(s){
     el("editPeriod").value = s.period || "";
     el("editStatus").value = s.status || "";
     el("editOneLine").value = s.one_line || "";
+    el("editSource").value = s.source_url || "";
+    el("editCue").value = s.cue_card || "";
     el("editBody").value = s.body || "";
     setEntryMode(true);
   };
@@ -1007,12 +1052,14 @@ function openEntry(s){
       period: el("editPeriod").value.trim() || null,
       status: el("editStatus").value.trim() || null,
       one_line: el("editOneLine").value.trim() || null,
+      source_url: el("editSource").value.trim() || null,
+      cue_card: el("editCue").value.trim() || null,
       body: el("editBody").value,
       updated_at: new Date().toISOString()
     };
     el("btnSaveEdit").disabled = true;
     db.from("entries").update(patch).eq("id", s.id).then(function(r){
-      if(r.error){ toast(r.error.message); return; }
+      if(r.error){ toast(r.error.message + (/cue_card|source_url/.test(r.error.message) ? " — run schema-update-v7.sql once, then retry." : "")); return; }
       Object.keys(patch).forEach(function(k){ s[k] = patch[k]; });
       toast("Saved.", true);
       populateReader(s);
@@ -1028,9 +1075,16 @@ function entryMarkdown(s){
     (s.role ? "Role: " + s.role + "\n" : "") +
     (s.period ? "Period: " + s.period + "\n" : "") +
     (s.status ? "Status: " + s.status + "\n" : "") +
+    (s.source_url ? "Source: " + s.source_url + "\n" : "") +
     ((s.tags && s.tags.length) ? "Competency tags: " + s.tags.join(", ") + "\n" : "") +
     (s.one_line ? "One-line: " + s.one_line + "\n" : "");
-  return head + "\n" + (s.body || "");
+  return head + "\n" + (s.cue_card ? "## Cue card\n\n" + s.cue_card + "\n\n" : "") + (s.body || "");
+}
+
+function extractCue(body){
+  var m = body.match(/(^|\n)##\s*Cue card\s*\n([\s\S]*?)(?=\n##\s|\s*$)/i);
+  if(!m) return { body: body, cue: null };
+  return { body: body.replace(m[0], "\n").replace(/\n{3,}/g, "\n\n").trim(), cue: m[2].trim() };
 }
 
 function renderTagEditor(){
@@ -1449,10 +1503,12 @@ function saveArtifact(){
     p.kind = kinds[state.mode] || "story";
   }
   delete p.declaredKind;
+  var ec = extractCue(p.body || "");
+  if(ec.cue){ p.cue_card = ec.cue; p.body = ec.body; }
   el("btnSaveArtifact").disabled = true;
   var blKind = state.mode === "capture" ? "story" : (state.mode === "codify" ? "knowledge" : null);
   db.from("entries").insert(p).then(function(r){
-    if(r.error){ toast(r.error.message); return; }
+    if(r.error){ toast(r.error.message + (/cue_card|source_url/.test(r.error.message) ? " — run schema-update-v7.sql once, then retry." : "")); return; }
     var newTags = p.tags.filter(function(t){ return tagList.indexOf(t) === -1; });
     var addP = newTags.length ? db.from("tags").upsert(newTags.map(function(t){ return { name: t }; })) : Promise.resolve({});
     return Promise.resolve(addP).then(function(){
@@ -1536,7 +1592,7 @@ function exportEntryPdf(s){
     var page = 3;
     y = M + 10;
     var sections = [];
-    var blocks = parseBlocks(s.body || "");
+    var blocks = parseBlocks((s.cue_card ? "## Cue card\n\n" + s.cue_card + "\n\n" : "") + (s.body || ""));
 
     function newPage(){ footer(page); doc.addPage(); page++; y = M + 10; }
     function need(h){ if(y + h > bottom) newPage(); }
@@ -1654,20 +1710,73 @@ function callClaudeOnce(systemText, contentBlocks, maxTokens){
   });
 }
 
-function ingestPrompt(){
+function ingestPrompt(kind){
   var today = new Date().toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"});
-  return "You are the ingest function of The Adviser, the private communications knowledge bank of Gareth Thomas, a senior internal communications professional. Read the attached file and produce a clipping entry in markdown.\n\n" +
-    "Structure exactly: line 1 is '# ' plus a short descriptive title. Then metadata lines, one per line: 'Kind: clipping', 'Status: ingested " + today + "', 'Competency tags: ...' (prefer these existing tags where they fit: " + (tagList.join(", ") || "none defined") + "), 'One-line: ...' (one sentence: what this is and why it earned a place in the bank).\n\n" +
-    "Then sections: 'What this is' (type of material, source or author if identifiable); 'Key content' (the substance, faithfully extracted: frameworks, statistics, quotes, steps, arguments; quote exactly where the wording matters); 'Why it's useful' (informed by the user's note when provided); 'Possible uses' (brief, concrete).\n\n" +
-    "Be faithful to the file. Do not invent content that is not present. If text in an image is partially illegible, say so rather than guessing. Output pure markdown only, no preamble.";
+  var sections = kind === "research"
+    ? "Then sections: 'What this is' (type of material, source, author, and date where identifiable); 'Key findings' (each finding with its exact numbers); 'Methodology and caveats' (sample, method, limits where discernible; write 'not stated' rather than guessing); 'Quotable lines' (exact wording, quoted); 'Why it's useful' (informed by the user's note when provided); 'Possible uses' (brief, concrete).\n\n"
+    : "Then sections: 'What this is' (type of material, source or author if identifiable); 'Key content' (the substance, faithfully extracted: frameworks, statistics, quotes, steps, arguments; quote exactly where the wording matters); 'Why it's useful' (informed by the user's note when provided); 'Possible uses' (brief, concrete).\n\n";
+  return "You are the ingest function of The Adviser, the private communications knowledge bank of Gareth Thomas, a senior internal communications professional. Read the attached material and produce a " + kind + " entry in markdown.\n\n" +
+    "Structure exactly: line 1 is '# ' plus a short descriptive title. Then metadata lines, one per line: 'Kind: " + kind + "', 'Status: ingested " + today + "', 'Competency tags: ...' (prefer these existing tags where they fit: " + (tagList.join(", ") || "none defined") + "), 'One-line: ...' (one sentence: what this is and why it earned a place in the bank).\n\n" +
+    sections +
+    "Be faithful to the material. Do not invent content that is not present. If text is partially illegible or a transcript is garbled in places, say so rather than guessing. Output pure markdown only, no preamble.";
+}
+
+function setImpTab(text){
+  el("impFileWrap").style.display = text ? "none" : "";
+  el("impTextWrap").style.display = text ? "" : "none";
+  el("impTabFile").className = "chip" + (text ? "" : " on");
+  el("impTabText").className = "chip" + (text ? " on" : "");
+}
+
+function finishImport(p, kind, source, attach){
+  p.kind = kind;
+  delete p.declaredKind;
+  if(source) p.source_url = source;
+  if(attach) p.attachment = attach;
+  return db.from("entries").insert(p).then(function(r){
+    if(r.error) throw new Error(r.error.message + (/source_url|cue_card/.test(r.error.message) ? " — run schema-update-v7.sql once, then retry." : ""));
+    var newTags = (p.tags||[]).filter(function(t){ return tagList.indexOf(t) === -1; });
+    return newTags.length ? db.from("tags").upsert(newTags.map(function(t){ return { name: t }; })) : null;
+  });
 }
 
 function doImport(){
+  var status = el("importStatus");
+  if(!read("adviser_key")){ openSettings(); toast("Add your Anthropic API key first."); return; }
+  var textMode = el("impTextWrap").style.display !== "none";
+  var kind = el("importKind").value;
+  var source = el("importSource").value.trim();
+  var note = el("importNote").value.trim();
+  var noteText = (note ? "User's note about this material: " + note : "No note provided.") +
+                 (source ? "\nSource URL: " + source : "");
+
+  function done(){
+    toast((kind === "research" ? "Research" : "Clipping") + " saved.", true);
+    el("importOverlay").classList.remove("open");
+    el("importFile").value = ""; el("importText").value = "";
+    el("importNote").value = ""; el("importSource").value = "";
+    status.textContent = "";
+    loadAll();
+  }
+  function fail(e){ status.textContent = ""; toast(e.message || "Import failed."); }
+
+  if(textMode){
+    var txt = el("importText").value.trim();
+    if(txt.length < 40){ toast("Paste something substantial first."); return; }
+    if(txt.length > 400000){ txt = txt.slice(0, 400000); toast("Very long text; imported the first ~400k characters."); }
+    el("btnDoImport").disabled = true;
+    status.textContent = "The Adviser is reading it…";
+    var content = [{ type: "text", text: "MATERIAL TO INGEST (pasted text, transcript, or email):\n\n" + txt }, { type: "text", text: noteText }];
+    callClaudeOnce(ingestPrompt(kind), content, 4096).then(function(text){
+      status.textContent = "Saving to the bank…";
+      return finishImport(parseArtifact(text), kind, source, null);
+    }).then(done).catch(fail).finally(function(){ el("btnDoImport").disabled = false; });
+    return;
+  }
+
   var input = el("importFile");
   var file = input.files && input.files[0];
-  var status = el("importStatus");
   if(!file){ toast("Choose a file first."); return; }
-  if(!read("adviser_key")){ openSettings(); toast("Add your Anthropic API key first."); return; }
   var isPdf = file.type === "application/pdf";
   var maxBytes = isPdf ? 15 * 1024 * 1024 : 5 * 1024 * 1024;
   if(file.size > maxBytes){ toast("File too large (" + Math.round(file.size/1048576) + "MB). Limit: " + (isPdf ? "15MB for PDFs." : "5MB for images.")); return; }
@@ -1681,13 +1790,10 @@ function doImport(){
     var block = isPdf
       ? { type: "document", source: { type: "base64", media_type: "application/pdf", data: b64 } }
       : { type: "image", source: { type: "base64", media_type: file.type, data: b64 } };
-    var note = el("importNote").value.trim();
-    var content = [block, { type: "text", text: note ? "User's note about this file: " + note : "No note provided." }];
+    var content = [block, { type: "text", text: noteText }];
     status.textContent = "The Adviser is reading it…";
-    callClaudeOnce(ingestPrompt(), content, 4096).then(function(text){
+    callClaudeOnce(ingestPrompt(kind), content, 4096).then(function(text){
       var p = parseArtifact(text);
-      p.kind = "clipping";
-      delete p.declaredKind;
       var attach = null;
       var uploadP = Promise.resolve();
       if(el("importKeep").checked && db){
@@ -1695,26 +1801,13 @@ function doImport(){
         var safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
         attach = "clip-" + Date.now() + "-" + safe;
         uploadP = db.storage.from("adviser-files").upload(attach, file, { contentType: file.type })
-          .then(function(r){ if(r.error){ attach = null; toast("Original not stored (" + r.error.message + "); clipping saved without it. Have you run schema-update.sql?"); } });
+          .then(function(r){ if(r.error){ attach = null; toast("Original not stored (" + r.error.message + "); saved without it."); } });
       }
       return uploadP.then(function(){
         status.textContent = "Saving to the bank…";
-        if(attach) p.attachment = attach;
-        return db.from("entries").insert(p).then(function(r){
-          if(r.error) throw new Error(r.error.message);
-          var newTags = (p.tags||[]).filter(function(t){ return tagList.indexOf(t) === -1; });
-          return newTags.length ? db.from("tags").upsert(newTags.map(function(t){ return { name: t }; })) : null;
-        });
+        return finishImport(p, kind, source, attach);
       });
-    }).then(function(){
-      toast("Clipping saved.", true);
-      el("importOverlay").classList.remove("open");
-      input.value = ""; el("importNote").value = ""; status.textContent = "";
-      loadAll();
-    }).catch(function(e){
-      status.textContent = "";
-      toast(e.message || "Import failed.");
-    }).finally(function(){ el("btnDoImport").disabled = false; });
+    }).then(done).catch(fail).finally(function(){ el("btnDoImport").disabled = false; });
   };
   fr.readAsDataURL(file);
 }
@@ -1871,6 +1964,18 @@ document.addEventListener("DOMContentLoaded", function(){
     el("importOverlay").classList.add("open");
   });
   el("btnDoImport").addEventListener("click", doImport);
+  el("impTabFile").addEventListener("click", function(){ setImpTab(false); });
+  el("impTabText").addEventListener("click", function(){ setImpTab(true); });
+  el("importTextFile").addEventListener("change", function(){
+    var f = this.files && this.files[0];
+    if(!f) return;
+    var fr = new FileReader();
+    fr.onload = function(){ el("importText").value = String(fr.result); };
+    fr.readAsText(f);
+  });
+  el("btnReaderSource").addEventListener("click", function(){
+    if(currentEntry && currentEntry.source_url) window.open(currentEntry.source_url, "_blank");
+  });
   el("btnBacklog").addEventListener("click", function(){ renderBacklogMgr(); el("backlogOverlay").classList.add("open"); });
   el("btnAddBacklog").addEventListener("click", addBacklogItem);
   el("btnReaderDelete").addEventListener("click", function(){
