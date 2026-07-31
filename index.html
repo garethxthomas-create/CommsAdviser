@@ -270,6 +270,10 @@
           <button class="quiet" id="btnResume" style="display:none">Resume session</button>
         </div>
         <div class="bank-toolbar">
+          <input id="askInput" type="text" placeholder="Ask your bank&hellip; e.g. what do I have on measurement?">
+          <button class="primary" id="btnAsk">Ask</button>
+        </div>
+        <div class="bank-toolbar">
           <input id="search" type="search" placeholder="Search titles, tags, content&hellip;">
         </div>
         <div class="tagrow" id="tagRow"></div>
@@ -431,6 +435,9 @@
     <div class="m-body" id="helpBody">
       <h3>The Bank (home)</h3>
       <p>Everything the Adviser knows about you, grouped in collapsible sections: <strong>Stories &amp; evidence</strong> (what happened), <strong>Doctrine</strong> (how you work), <strong>Library</strong> (imported clippings and research), and <strong>Working documents</strong> (prep packs, reviews, debriefs). A Recent row appears once the bank is big enough to need one. Search covers titles, tags, and full text, and searching flattens everything, archived included, into one result list. The tag row shows your ten most-used tags; the rest sit behind the expander. Tap any card to read it.</p>
+
+      <h3>Ask</h3>
+      <p>The box at the top of the Bank. Ask questions in plain language, "what do I have on measurement?", "which stories show budget management?", and the Adviser answers from the full contents of the bank, citing entries by name and quoting exact numbers. It also tells you plainly when something isn't captured yet, and whether it's waiting on your backlog. Follow-up questions continue the conversation. Search below it stays for when you know the exact word you're looking for.</p>
 
       <h3>Capture</h3>
       <p>An interview about your past work. The Adviser proposes what to capture next from your story backlog and coverage gaps, then digs for the texture polished versions leave out: the people, the decisions, the numbers, the uncomfortable bit. Ends with a story entry saved to the bank, complete with a cue card: a glanceable quick-reference shown at the top of the entry and included in PDF exports. Cue cards are editable on any entry, so cards you already have can be pasted straight in.</p>
@@ -650,6 +657,37 @@ var MODES = {
     ].join("\n")
   }
 };
+
+MODES.ask = { label: "Ask" };
+
+function askSystem(){
+  var sp = [
+"You are the librarian of The Adviser: the retrieval interface to the private Career Evidence Bank of Gareth Thomas, a senior internal communications professional. His FULL BANK is provided below. Your job is to answer his questions about what it contains, accurately and usefully.",
+"",
+"Rules:",
+"1. Answer from the bank. Cite entries by their titles in [brackets] so he can find them. Quote exact numbers and exact wording when they exist; never round or paraphrase a statistic that is written down.",
+"2. When the bank does not contain the answer, say so plainly. If the missing material is on his backlog, point that out ('not captured yet, but it is on your backlog'). If it is not on the backlog either, suggest it might belong there.",
+"3. Synthesize when asked: questions like 'what do I have on X' get a short organized answer across entries, not a data dump.",
+"4. Stay compact: a few sentences to a short paragraph unless the question genuinely needs more. He can always ask a follow-up.",
+"5. This is retrieval, not challenge: no pushback, no interviewing, no one-question rule. Just knowledgeable, precise answers.",
+"6. Tone: direct, professional, warm, no em dashes, US spelling."
+  ].join("\n");
+  var full = fullEntriesContext();
+  if(full) sp += "\n\nFULL BANK ENTRIES:\n" + full;
+  var bs = backlogText("story"), bk = backlogText("knowledge");
+  if(bs || bk) sp += "\n\nBACKLOG (known but not yet captured):\n" + [bs, bk].filter(Boolean).join("\n");
+  return sp;
+}
+
+function startAsk(question){
+  if(!read("adviser_key")){ openSettings(); toast("Add your Anthropic API key first."); return; }
+  state.mode = "ask";
+  state.messages = [{ role: "user", content: question }];
+  saveSession();
+  renderChat();
+  show("chat");
+  respond(1600);
+}
 
 /* ================= State ================= */
 
@@ -1217,7 +1255,7 @@ function show(view){
   el("chatView").style.display = view === "chat" ? "" : "none";
   el("composer").style.display = view === "chat" ? "" : "none";
   el("btnBank").style.display = view === "bank" ? "none" : "";
-  el("btnArtifact").style.display = view === "chat" ? "" : "none";
+  el("btnArtifact").style.display = (view === "chat" && state.mode !== "ask") ? "" : "none";
   var badge = el("modeBadge");
   if(view === "chat" && state.mode){ badge.style.display = "inline-block"; badge.textContent = MODES[state.mode].label; }
   else badge.style.display = "none";
@@ -1307,6 +1345,7 @@ function fullEntriesContext(){
 }
 
 function systemPrompt(){
+  if(state.mode === "ask") return askSystem();
   var sp = BASE_PROMPT + "\n\n" + MODES[state.mode].prompt;
   if(state.mode === "capture"){
     var bt = backlogText("story");
@@ -1922,6 +1961,15 @@ document.addEventListener("DOMContentLoaded", function(){
   el("btnAddTag").addEventListener("click", addTag);
   el("btnExport").addEventListener("click", exportAll);
   el("search").addEventListener("input", renderBank);
+  el("btnAsk").addEventListener("click", function(){
+    var q = el("askInput").value.trim();
+    if(!q){ toast("Type a question first."); return; }
+    el("askInput").value = "";
+    startAsk(q);
+  });
+  el("askInput").addEventListener("keydown", function(e){
+    if(e.key === "Enter" && !e.isComposing){ e.preventDefault(); el("btnAsk").click(); }
+  });
 
   var cards = document.querySelectorAll(".mode-card");
   for(var i=0;i<cards.length;i++){
