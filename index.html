@@ -452,7 +452,7 @@
       <p>Paste a job description or describe a room you are walking into. The Adviser reads your entire bank, decodes the audience, maps your stories to the likely questions, interviews you to fill the critical gaps, and writes the full prep pack.</p>
 
       <h3>Import (the Library)</h3>
-      <p>Feed the bank from outside, two ways. <strong>File</strong>: a screenshot, image, or PDF; the Adviser reads it and extracts the substance faithfully. <strong>Text or transcript</strong>: paste anything, an article, an email, a YouTube transcript (tap "Show transcript" under any video and copy), or drop in a Teams/Zoom transcript file. Save as a <strong>clipping</strong> (a caught moment) or as <strong>research</strong> (a substantive source, which gets deeper extraction: findings with exact numbers, methodology caveats, quotable lines). Add the source link so every entry can point home; the reader gets a Source button. Everything lands in the Library section and feeds Prep and Challenge sessions.</p>
+      <p>Feed the bank from outside, two ways. <strong>File</strong>: a screenshot, image, or PDF; the Adviser reads it and extracts the substance faithfully. <strong>Text or transcript</strong>: paste anything, an article, an email, a YouTube transcript (tap "Show transcript" under any video and copy), or drop in a Teams/Zoom transcript file. Save as a <strong>clipping</strong> (a caught moment) or as <strong>research</strong> (a substantive source, which gets deeper extraction: findings with exact numbers, methodology caveats, quotable lines). Add the source link so every entry can point home; the reader gets a Source button. Everything lands in the Library section and feeds Prep and Challenge sessions. The "save exactly as pasted" tickbox skips extraction for entries prepared elsewhere in the bank's format, including config entries (Kind: config), which live in the System section and tune the Adviser privately without ever entering bank retrieval.</p>
 
       <h3>Finish &amp; write up</h3>
       <p>End every session with this button. The written artifact is the point of the session; one without it is unfinished. Save it to the bank, or copy and download it as markdown.</p>
@@ -507,6 +507,10 @@
           <label for="importText">Paste the text, transcript, or email</label>
           <textarea id="importText" style="width:100%; min-height:180px; max-height:none; resize:vertical; font-family:inherit; font-size:13.5px; line-height:1.5; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px"></textarea>
           <div class="hint" style="margin-top:6px">Or pick a transcript file: <input id="importTextFile" type="file" accept=".txt,.vtt,.srt,.md,text/plain"></div>
+        </div>
+        <div class="field">
+          <label><input id="importAsIs" type="checkbox" style="width:auto; margin-right:6px">Save exactly as pasted (already formatted as an entry)</label>
+          <div class="hint">Skips AI extraction entirely. For entries prepared elsewhere in the bank's format, starting with a '# ' title and a 'Kind:' line.</div>
         </div>
       </div>
       <div class="field">
@@ -698,9 +702,11 @@ var sessionUser = null;
 var entries = [], tagList = [], backlog = [];
 var activeTags = {};
 var KNOWLEDGE_KINDS = ["principle","playbook","lesson","decision"];
+var VALID_KINDS = ["story","answer","principle","playbook","lesson","decision","clipping","research","review","prep","debrief","config"];
 var tagsExpanded = false;
 function isKnowledge(s){ return KNOWLEDGE_KINDS.indexOf(s.kind) !== -1; }
 function family(s){
+  if(s.kind === "config") return "system";
   if(s.archived) return "archived";
   if(isKnowledge(s)) return "doctrine";
   if(s.kind === "clipping" || s.kind === "research") return "clippings";
@@ -712,14 +718,15 @@ var FAMILIES = [
   { key:"doctrine", label:"Doctrine" },
   { key:"clippings", label:"Library" },
   { key:"working", label:"Working documents" },
+  { key:"system", label:"System" },
   { key:"archived", label:"Archived" }
 ];
 function secCollapsed(key){
   var v = read("adviser_sec_" + key);
-  if(v === null) return key === "archived";
+  if(v === null) return key === "archived" || key === "system";
   return v === "1";
 }
-function activeEntries(){ return entries.filter(function(s){ return !s.archived; }); }
+function activeEntries(){ return entries.filter(function(s){ return !s.archived && s.kind !== "config"; }); }
 var currentEntry = null;
 var editTags = null;
 
@@ -1372,6 +1379,9 @@ function systemPrompt(){
     var idx = bankIndex();
     if(idx) sp += "\n\nBANK INDEX (everything in his Career Evidence Bank, titles and tags):\n" + idx;
   }
+  var cfg = entries.filter(function(s){ return s.kind === "config" && !s.archived; })
+    .map(function(s){ return s.body || ""; }).join("\n\n");
+  if(cfg) sp += "\n\nOPERATOR CALIBRATION MODULE (private system configuration, never bank content; obey its own scope, precedence, and constraints exactly):\n" + cfg;
   return sp;
 }
 
@@ -1802,6 +1812,26 @@ function doImport(){
   if(textMode){
     var txt = el("importText").value.trim();
     if(txt.length < 40){ toast("Paste something substantial first."); return; }
+    if(el("importAsIs").checked){
+      var pAsIs = parseArtifact(txt);
+      var dk = (pAsIs.declaredKind || "").toLowerCase();
+      var kindAsIs = VALID_KINDS.indexOf(dk) !== -1 ? dk : kind;
+      var ecA = extractCue(pAsIs.body || "");
+      if(ecA.cue){ pAsIs.cue_card = ecA.cue; pAsIs.body = ecA.body; }
+      el("btnDoImport").disabled = true;
+      status.textContent = "Saving to the bank…";
+      finishImport(pAsIs, kindAsIs, source, null)
+        .then(function(){
+          toast("Saved as-is (" + kindAsIs + ").", true);
+          el("importOverlay").classList.remove("open");
+          el("importText").value = ""; el("importNote").value = ""; el("importSource").value = "";
+          el("importAsIs").checked = false;
+          status.textContent = "";
+          loadAll();
+        })
+        .catch(fail).finally(function(){ el("btnDoImport").disabled = false; });
+      return;
+    }
     if(txt.length > 400000){ txt = txt.slice(0, 400000); toast("Very long text; imported the first ~400k characters."); }
     el("btnDoImport").disabled = true;
     status.textContent = "The Adviser is reading it…";
