@@ -212,6 +212,18 @@
   .paper .r-body strong{color:#10161d}
   .paper .r-body code{background:#efece2; color:#212a33}
   #artifactPretty{padding:26px 30px}
+  #draftTitle{
+    width:100%; border:none; background:transparent; outline:none; margin-bottom:14px;
+    font-family:ui-serif,Georgia,'Iowan Old Style','Times New Roman',serif;
+    font-size:24px; font-weight:700; color:#1b232c; padding:0;
+  }
+  #draftTitle::placeholder, #draftText::placeholder{color:#a9a294}
+  #draftText{
+    width:100%; min-height:55vh; max-height:none; border:none; background:transparent;
+    outline:none; resize:vertical; padding:0;
+    font-family:ui-serif,Georgia,'Iowan Old Style','Times New Roman',serif;
+    font-size:17.5px; line-height:1.68; color:#212a33;
+  }
   .cuecard{
     background:#edf4f2; border:1px solid #d2e2de; border-radius:12px;
     padding:14px 18px; margin:18px 0; color:#243039;
@@ -246,6 +258,7 @@
   <span class="badge" id="modeBadge"></span>
   <div class="spacer"></div>
   <button class="quiet" id="btnBank" style="display:none">Bank</button>
+  <button class="quiet" id="btnWrite">Write</button>
   <button class="quiet" id="btnArtifact" style="display:none" title="End the session and generate the written artifact">Finish &amp; write up</button>
   <button class="quiet" id="btnHelp" aria-label="Help">?</button>
   <button class="quiet" id="btnSettings" aria-label="Settings">&#9881;</button>
@@ -280,6 +293,21 @@
         <div id="storyList"></div>
         <div class="empty" id="bankEmpty" style="display:none"></div>
       </div>
+    </div>
+
+    <!-- WRITE -->
+    <div id="writeView" style="display:none">
+      <div class="reader-toolbar">
+        <button class="primary" id="btnDraftReview">Review this draft</button>
+        <button class="quiet" id="btnDraftCopy">Copy</button>
+        <button class="quiet" id="btnDraftClear">Clear</button>
+        <span class="hint" id="draftCount" style="align-self:center"></span>
+      </div>
+      <div class="tagrow" id="lensRow"></div>
+      <article class="paper">
+        <input id="draftTitle" type="text" placeholder="Title (optional)">
+        <textarea id="draftText" placeholder="Write here, or paste a draft. The panel reads only when you ask."></textarea>
+      </article>
     </div>
 
     <!-- READER -->
@@ -453,6 +481,9 @@
 
       <h3>Import (the Library)</h3>
       <p>Feed the bank from outside, two ways. <strong>File</strong>: a screenshot, image, or PDF; the Adviser reads it and extracts the substance faithfully. <strong>Text or transcript</strong>: paste anything, an article, an email, a YouTube transcript (tap "Show transcript" under any video and copy), or drop in a Teams/Zoom transcript file. Save as a <strong>clipping</strong> (a caught moment) or as <strong>research</strong> (a substantive source, which gets deeper extraction: findings with exact numbers, methodology caveats, quotable lines). Add the source link so every entry can point home; the reader gets a Source button. Everything lands in the Library section and feeds Prep and Challenge sessions. The "save exactly as pasted" tickbox skips extraction for entries prepared elsewhere in the bank's format, including config entries (Kind: config), which live in the System section and tune the Adviser privately without ever entering bank retrieval.</p>
+
+      <h3>Write</h3>
+      <p>A focused drafting page (top bar). Write or paste your own work on paper, with an autosaving draft that survives closing the tab. The three panel lenses sit above it: tick the ones you want, hit "Review this draft," and the piece goes into a Challenge session where each chosen lens critiques it in its own voice at line level. The panel challenges and illustrates; it never writes the piece. Lens definitions live in the System section and are yours to refine as you read the source books.</p>
 
       <h3>Finish &amp; write up</h3>
       <p>End every session with this button. The written artifact is the point of the session; one without it is unfinished. Save it to the bank, or copy and download it as markdown.</p>
@@ -681,6 +712,56 @@ function askSystem(){
   var bs = backlogText("story"), bk = backlogText("knowledge");
   if(bs || bk) sp += "\n\nBACKLOG (known but not yet captured):\n" + [bs, bk].filter(Boolean).join("\n");
   return sp;
+}
+
+var LENSES = ["Zinsser lens", "Eloquence lens", "Speechcraft lens"];
+var lensOn = {};
+
+function renderLensRow(){
+  var row = el("lensRow");
+  row.innerHTML = "";
+  LENSES.forEach(function(name){
+    var c = document.createElement("span");
+    c.className = "chip" + (lensOn[name] ? " on" : "");
+    c.textContent = name;
+    c.title = "Include this lens in the review";
+    c.addEventListener("click", function(){ lensOn[name] = !lensOn[name]; renderLensRow(); });
+    row.appendChild(c);
+  });
+}
+
+function updateDraftCount(){
+  var t = el("draftText").value.trim();
+  var n = t ? t.split(/\s+/).length : 0;
+  el("draftCount").textContent = n ? n + " words" : "";
+}
+
+function openWrite(){
+  el("draftTitle").value = read("adviser_draft_title") || "";
+  el("draftText").value = read("adviser_draft_text") || "";
+  renderLensRow();
+  updateDraftCount();
+  show("write");
+  el("draftText").focus();
+}
+
+function reviewDraft(){
+  if(!read("adviser_key")){ openSettings(); toast("Add your Anthropic API key first."); return; }
+  var text = el("draftText").value.trim();
+  if(text.length < 30){ toast("Write something first; the panel needs a draft."); return; }
+  var title = el("draftTitle").value.trim();
+  var chosen = LENSES.filter(function(n){ return lensOn[n]; });
+  var msg = (chosen.length
+      ? "Panel review requested. Lenses: " + chosen.join(", ") + "."
+      : "Review this draft.") +
+    (title ? "\n\nTitle: " + title : "") +
+    "\n\n---\n\n" + text;
+  state.mode = "challenge";
+  state.messages = [{ role: "user", content: msg }];
+  saveSession();
+  renderChat();
+  show("chat");
+  respond(2048);
 }
 
 function startAsk(question){
@@ -1257,11 +1338,13 @@ function exportAll(){
 function show(view){
   state.view = view;
   el("bankView").style.display = view === "bank" ? "" : "none";
+  el("writeView").style.display = view === "write" ? "" : "none";
   el("readerView").style.display = view === "reader" ? "" : "none";
   el("setupView").style.display = view === "setup" ? "" : "none";
   el("chatView").style.display = view === "chat" ? "" : "none";
   el("composer").style.display = view === "chat" ? "" : "none";
   el("btnBank").style.display = view === "bank" ? "none" : "";
+  el("btnWrite").style.display = view === "write" ? "none" : "";
   el("btnArtifact").style.display = (view === "chat" && state.mode !== "ask") ? "" : "none";
   var badge = el("modeBadge");
   if(view === "chat" && state.mode){ badge.style.display = "inline-block"; badge.textContent = MODES[state.mode].label; }
@@ -2008,6 +2091,25 @@ document.addEventListener("DOMContentLoaded", function(){
 
   el("btnBank").addEventListener("click", function(){ show("bank"); renderBank(); });
   el("brand").addEventListener("click", function(){ show("bank"); renderBank(); });
+  el("btnWrite").addEventListener("click", openWrite);
+  el("btnDraftReview").addEventListener("click", reviewDraft);
+  el("btnDraftCopy").addEventListener("click", function(){
+    var t = (el("draftTitle").value.trim() ? el("draftTitle").value.trim() + "\n\n" : "") + el("draftText").value;
+    if(navigator.clipboard && t.trim()) navigator.clipboard.writeText(t).then(function(){ toast("Copied.", true); });
+  });
+  el("btnDraftClear").addEventListener("click", function(){
+    if(el("draftText").value.trim() && !confirm("Clear the draft? It is not saved anywhere else.")) return;
+    el("draftTitle").value = ""; el("draftText").value = "";
+    localStorage.removeItem("adviser_draft_title"); localStorage.removeItem("adviser_draft_text");
+    updateDraftCount();
+  });
+  el("draftText").addEventListener("input", function(){
+    store("adviser_draft_text", el("draftText").value);
+    updateDraftCount();
+  });
+  el("draftTitle").addEventListener("input", function(){
+    store("adviser_draft_title", el("draftTitle").value);
+  });
   el("btnHelp").addEventListener("click", function(){ el("helpOverlay").classList.add("open"); });
 
   el("btnReaderEdit").addEventListener("click", function(){
