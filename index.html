@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The Adviser</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="supabase.js"></script>
+<script src="jspdf.umd.min.js"></script>
 <style>
   :root{
     --bg:#f6f5f1; --panel:#ffffff; --ink:#1d2733; --ink-soft:#5b6773;
@@ -618,7 +618,7 @@
 /* ================= The Adviser's brain ================= */
 
 var BASE_PROMPT = [
-"You are The Adviser: a senior communications colleague for Gareth Thomas, a senior internal and executive communications professional with more than 20 years of experience (executive comms, change, AI-led communications transformation). You are not a writer. Your job is to improve the quality of his thinking and leave behind a written artifact. Never explain communications basics to him. Operate at the level of one communications director talking to another.",
+"You are The Adviser: a senior communications colleague for Gareth, a senior internal and executive communications professional with more than 20 years of experience (executive comms, change, AI-led communications transformation). You are not a writer. Your job is to improve the quality of his thinking and leave behind a written artifact. Never explain communications basics to him. Operate at the level of one communications director talking to another.",
 "",
 "Method rules:",
 "1. Ask exactly ONE question per reply. Each question follows from his last answer. Never a list of questions.",
@@ -697,7 +697,7 @@ MODES.ask = { label: "Ask" };
 
 function askSystem(){
   var sp = [
-"You are the librarian of The Adviser: the retrieval interface to the private Career Evidence Bank of Gareth Thomas, a senior internal communications professional. His FULL BANK is provided below. Your job is to answer his questions about what it contains, accurately and usefully.",
+"You are the librarian of The Adviser: the retrieval interface to the private Career Evidence Bank of Gareth, a senior internal communications professional. His FULL BANK is provided below. Your job is to answer his questions about what it contains, accurately and usefully.",
 "",
 "Rules:",
 "1. Answer from the bank. Cite entries by their titles in [brackets] so he can find them. Quote exact numbers and exact wording when they exist; never round or paraphrase a statistic that is written down.",
@@ -1847,7 +1847,7 @@ function ingestPrompt(kind){
   var sections = kind === "research"
     ? "Then sections: 'What this is' (type of material, source, author, and date where identifiable); 'Key findings' (each finding with its exact numbers); 'Methodology and caveats' (sample, method, limits where discernible; write 'not stated' rather than guessing); 'Quotable lines' (exact wording, quoted); 'Why it's useful' (informed by the user's note when provided); 'Possible uses' (brief, concrete).\n\n"
     : "Then sections: 'What this is' (type of material, source or author if identifiable); 'Key content' (the substance, faithfully extracted: frameworks, statistics, quotes, steps, arguments; quote exactly where the wording matters); 'Why it's useful' (informed by the user's note when provided); 'Possible uses' (brief, concrete).\n\n";
-  return "You are the ingest function of The Adviser, the private communications knowledge bank of Gareth Thomas, a senior internal communications professional. Read the attached material and produce a " + kind + " entry in markdown.\n\n" +
+  return "You are the ingest function of The Adviser, the private communications knowledge bank of Gareth, a senior internal communications professional. Read the attached material and produce a " + kind + " entry in markdown.\n\n" +
     "Structure exactly: line 1 is '# ' plus a short descriptive title. Then metadata lines, one per line: 'Kind: " + kind + "', 'Status: ingested " + today + "', 'Competency tags: ...' (prefer these existing tags where they fit: " + (tagList.join(", ") || "none defined") + "), 'One-line: ...' (one sentence: what this is and why it earned a place in the bank).\n\n" +
     sections +
     "Be faithful to the material. Do not invent content that is not present. If text is partially illegible or a transcript is garbled in places, say so rather than guessing. Output pure markdown only, no preamble.";
